@@ -160,28 +160,37 @@ packs()
 help()
 `;
 
-/** What a new set starts with: a deck, its filter and eq on controls, a little motion */
-export const SampleSet = (name: string, pack: string) => `// ${name} — ctrl+enter runs the block under the cursor
+/**
+ * What a new set starts with: a deck, its filter and eq on controls, a
+ * little motion. The side editor's sets use deck b, so the two don't fight
+ * over one deck.
+ */
+export const SampleSet = (name: string, pack: string, id: DeckId = "a") => `// ${name} — ctrl+enter runs the block under the cursor
 
+<<<<<<< Updated upstream
 // a deck, drawn right here
 const a = deck("a").load("${pack}").infinite().show()
+=======
+// deck ${id}, drawn right here
+const ${id} = deck("${id}").load("${pack}").infinite().show()
+>>>>>>> Stashed changes
 
 // play it and listen to it
-a.play()
-xfade("a")
+${id}.play()
+xfade("${id}")
 
 // filter and eq on controls: drag them, the numbers follow
-a.filter(slider(0, -1, 1))
-a.eq("low", knob(0, -1, 0.5))
-a.eq("high", knob(0, -1, 0.5))
-a.vol(slider(0.9, 0, 1))
+${id}.filter(slider(0, -1, 1))
+${id}.eq("low", knob(0, -1, 0.5))
+${id}.eq("high", knob(0, -1, 0.5))
+${id}.vol(slider(0.9, 0, 1))
 
 // switch effects on and off
-a.fx("echo", toggle(false))
-button("drop", () => a.jump(1))
+${id}.fx("echo", toggle(false))
+button("drop", () => ${id}.jump(1))
 
 // a slow sweep, on its own — run it, then run the slider line to take over again
-a.filter(lfo(16, -0.4, 0.4))
+${id}.filter(lfo(16, -0.4, 0.4))
 `;
 
 const storage = {
@@ -1179,9 +1188,12 @@ export class Live {
 
   async newSet(name: string, pane: Pane = "left") {
     const title = name.trim() || "untitled";
-    // the sample uses a pack that exists, when the list can be read
-    const pack = (await this.packList().catch(() => []))[0]?.id ?? "my-pack";
-    const set = { id: `set-${Date.now().toString(36)}`, name: title, code: SampleSet(title, pack), updatedAt: Date.now() };
+    // the sample uses a pack that exists, when the list can be read; the
+    // side editor plays deck b, with another pack than the first when it can
+    const deck: DeckId = pane === "right" ? "b" : "a";
+    const packs = await this.packList().catch(() => []);
+    const pack = (deck === "b" ? packs[1] : undefined)?.id ?? packs[0]?.id ?? "my-pack";
+    const set = { id: `set-${Date.now().toString(36)}`, name: title, code: SampleSet(title, pack, deck), updatedAt: Date.now() };
     await Library.saveSet(set);
     this.code[pane] = set.code;
     this.use(set, await this.refreshSets(), pane);
