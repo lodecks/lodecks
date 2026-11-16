@@ -18,6 +18,6 @@
       "bucket_name": "lodecks-packs"
     }
   ],
-  // serve it on your domain once the zone is on this Cloudflare account:
-  "routes": [{ "pattern": "lodecks.com", "custom_domain": true }]
+  // lodecks.com, a zone on the same Cloudflare account
+  "routes": [{ "pattern": "lodecks.com/*", "zone_name": "lodecks.com" }]
 }
