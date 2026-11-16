@@ -167,13 +167,8 @@ help()
  */
 export const SampleSet = (name: string, pack: string, id: DeckId = "a") => `// ${name} — ctrl+enter runs the block under the cursor
 
-<<<<<<< Updated upstream
-// a deck, drawn right here
-const a = deck("a").load("${pack}").infinite().show()
-=======
 // deck ${id}, drawn right here
 const ${id} = deck("${id}").load("${pack}").infinite().show()
->>>>>>> Stashed changes
 
 // play it and listen to it
 ${id}.play()
