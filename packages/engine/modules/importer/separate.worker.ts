@@ -5,10 +5,13 @@
  * browser's cache, downloaded there by the importer.
  */
 import type * as Ort from "onnxruntime-web";
-import gpuWasmUrl from "onnxruntime-web/ort-wasm-simd-threaded.jsep.wasm?url";
+// the extern-wasm builds (see vite.config.ts): each backend's small glue
+// module is bundled; the wasm it runs comes from wasmPaths
+import gpuGlueUrl from "onnxruntime-web/ort-wasm-simd-threaded.jsep.mjs?url";
+import glueUrl from "onnxruntime-web/ort-wasm-simd-threaded.mjs?url";
 import wasmUrl from "onnxruntime-web/ort-wasm-simd-threaded.wasm?url";
 
-import { Backend, ModelCache, ModelUrl, Segment, StemOrder, mixWindow } from "./separate.module";
+import { Backend, ModelCache, ModelUrl, Segment, StemOrder, mixWindow, runtimePath } from "./separate.module";
 
 type Request = { type: "separate"; left: Float32Array; right: Float32Array; backend?: Backend | "auto" };
 type Loaded = { ort: typeof Ort; session: Ort.InferenceSession; backend: Backend; threads: number };
@@ -43,7 +46,7 @@ const gpuAvailable = async () => {
  */
 const loadGpu = async (): Promise<Loaded> => {
   const ort = (await import("onnxruntime-web")) as typeof Ort;
-  ort.env.wasm.wasmPaths = { wasm: gpuWasmUrl };
+  ort.env.wasm.wasmPaths = { mjs: gpuGlueUrl, wasm: new URL(runtimePath(ort.env.versions.web), self.location.origin).href };
   ort.env.wasm.numThreads = threadCount();
   const session = await ort.InferenceSession.create(await modelBytes(), {
     executionProviders: ["webgpu"],
@@ -57,7 +60,7 @@ const loadGpu = async (): Promise<Loaded> => {
 
 const loadWasm = async (): Promise<Loaded> => {
   const ort = (await import("onnxruntime-web/wasm")) as typeof Ort;
-  ort.env.wasm.wasmPaths = { wasm: wasmUrl };
+  ort.env.wasm.wasmPaths = { mjs: glueUrl, wasm: wasmUrl };
   ort.env.wasm.numThreads = threadCount();
   // light options: full optimisation folds the fp16 → fp32 casts into
   // extra copies of the weights and runs out of wasm memory

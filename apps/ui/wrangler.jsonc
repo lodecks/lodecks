@@ -1,0 +1,23 @@
+// lodecks on Cloudflare Workers: one Worker renders the app, serves its
+// static files and answers the api (/api/v1), with the packs in R2.
+// From apps/ui: `bun run upload` fills the bucket (packs, and the WebGPU
+// wasm too big for a static file), `bun run deploy` builds and deploys.
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "lodecks",
+  "compatibility_date": "2026-11-10",
+  "compatibility_flags": ["nodejs_compat"],
+  // the api and /runtime from R2, then TanStack Start (see that file)
+  "main": "./server.ts",
+  "observability": { "enabled": true },
+  "r2_buckets": [
+    {
+      // the .lopack files the api lists and serves, at the top of the bucket,
+      // and runtime/: files too big to deploy as static files
+      "binding": "PACKS",
+      "bucket_name": "lodecks-packs"
+    }
+  ],
+  // serve it on your domain once the zone is on this Cloudflare account:
+  "routes": [{ "pattern": "lodecks.com", "custom_domain": true }]
+}

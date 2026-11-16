@@ -103,7 +103,8 @@ export const fetchImage = async (raw: string, options: FetchOptions = {}) => {
     const response = await fetch(url, {
       redirect: "manual",
       signal,
-      headers: { accept: ImageTypes.join(", ") }
+      // hosts such as Wikimedia refuse requests without one (Workers send none)
+      headers: { accept: ImageTypes.join(", "), "user-agent": "lodecks (+https://lodecks.com)" }
     }).catch((error: Error) => {
       throw new FetchError(error.name === "TimeoutError" ? "timed out" : `fetch failed: ${error.message}`, 502);
     });

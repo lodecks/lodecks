@@ -5,6 +5,13 @@
  */
 export const ModelUrl = "https://huggingface.co/StemSplitio/htdemucs-onnx/resolve/main/htdemucs_fp16weights.onnx";
 export const ModelCache = "lodecks-models";
+/**
+ * onnxruntime-web's WebGPU wasm, served from the site rather than bundled:
+ * at 28 MB it is over Cloudflare's 25 MB limit for static files. Vite serves
+ * it in dev, the Worker from R2 in production (apps/ui/server.ts).
+ */
+export const RuntimeWasm = "ort-wasm-simd-threaded.jsep.wasm";
+export const runtimePath = (version: string) => `/runtime/onnxruntime-web@${version}/${RuntimeWasm}`;
 export const ModelSize = 166 * 1024 * 1024;
 // samples per window at 44.1 kHz (7.8 s), as the model was exported
 export const Segment = 343980;

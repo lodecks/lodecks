@@ -7,6 +7,10 @@ dist
 .source
 .DS_Store
 .env
+# cloudflare: local wrangler state, dev secrets and generated types
+.wrangler
+.dev.vars*
+worker-configuration.d.ts
 *.log
 packs/*
 !packs/.gitkeep

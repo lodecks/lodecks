@@ -27,6 +27,23 @@ a song in the app. `/` takes you to `/play`. The starter set loads a pack on dec
 cursor in a block and hit `⌘↵` (Ctrl+Enter on Windows and Linux). `help()`
 prints the cheat sheet, and the docs live at `/docs`.
 
+## Deploy to Cloudflare
+
+lodecks runs as one Cloudflare Worker (`apps/ui/wrangler.jsonc`): it renders
+the app, serves its files and answers the api, with the packs in an R2
+bucket. From `apps/ui`:
+
+```bash
+bunx wrangler login
+bunx wrangler r2 bucket create lodecks-packs
+bun run upload         # the packs in ./packs, and onnxruntime's WebGPU wasm
+bun run deploy         # build, then wrangler deploy
+```
+
+`bun run build && bun run preview` runs the built Worker locally (fill its
+bucket with `bun run upload --local`). The Worker is about 5.5 MB gzipped,
+over the free plan's 3 MB, so it needs Workers Paid.
+
 ## What's inside
 
 ```
