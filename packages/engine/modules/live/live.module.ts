@@ -119,7 +119,7 @@ export const StarterSet = `/*
 */
 
 // deck a, with the "intro" pack. show() draws it right here
-const a = deck("a", "intro").show()
+const a = deck("a").load("intro").show()
 
 // hit play: the song comes in on the next phrase, the clock with it
 a.play()
@@ -150,7 +150,7 @@ viz("cyberwave").show()
 viz("portal").blend("screen").opacity(kick()).over()
 
 // a second track on deck b, blended in at the best moment
-// const b = deck("b", "your-pack")
+// const b = deck("b").load("your-pack")
 // b.tune()      // glide b into a's key
 // b.take(16)    // 16 bars of blend, starting where both songs fit
 
@@ -164,7 +164,7 @@ help()
 export const SampleSet = (name: string, pack: string) => `// ${name} — ctrl+enter runs the block under the cursor
 
 // a deck, drawn right here
-const a = deck("a", "${pack}").infinite().show()
+const a = deck("a").load("${pack}").infinite().show()
 
 // play it and listen to it
 a.play()
@@ -460,7 +460,7 @@ export class Live {
       return handle;
     };
     const needPack = () => {
-      if (!deck().store.get().pack) throw new LiveError(`deck ${id} is empty — deck("${id}", "pack") loads one`);
+      if (!deck().store.get().pack) throw new LiveError(`deck ${id} is empty — deck("${id}").load("pack") loads one`);
     };
     const bind = (param: string, value: unknown, apply: (value: number) => void) =>
       queue(() => this.binder.set(`${id}.${param}`, isSignal(value) ? value : Number(value), apply));
@@ -953,8 +953,9 @@ export class Live {
         }
       },
       deck: (id: unknown, pack?: unknown) => {
-        const handle = live.deckHandle(deckId(id));
-        return pack === undefined ? handle : handle.load(String(pack));
+        // a pack goes on with .load(), so loading always reads the same
+        if (pack !== undefined) throw new LiveError(`deck() takes only the deck — load a pack with deck("${deckId(id)}").load("${pack}")`);
+        return live.deckHandle(deckId(id));
       },
       mixer: () => live.mixerHandle(),
       xfade: (to: unknown, bars?: number) => live.mixerHandle().xfade(to, bars),

@@ -79,7 +79,7 @@ export const Controls = ["slider", "knob", "toggle", "button", "pad"];
 
 export const Globals: ApiDoc[] = [
   // decks and mixing
-  { name: "deck", signature: 'deck("a" | "b", pack?)', doc: "a deck; with a pack, loads it (once — running again keeps it playing)", returns: "deck", args: ["deck", "pack"] },
+  { name: "deck", signature: 'deck("a" | "b")', doc: "a deck; .load(pack) puts a pack on it", returns: "deck", args: ["deck"] },
   { name: "mixer", signature: "mixer()", doc: "the mixer: crossfader, channels, auto mix", returns: "mixer" },
   { name: "xfade", signature: 'xfade(to, bars?)', doc: 'crossfader to "a", "b", "mid" or 0…1 (or a signal), gliding over bars', returns: "mixer", args: ["xfade"] },
   { name: "bpm", signature: "bpm(tempo?)", doc: "sets the master tempo, or reads it" },

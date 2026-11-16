@@ -82,7 +82,7 @@ const TryBox = ({ code, label = "try it" }: { code: string; label?: string }) =>
     try {
       engine.visuals.init();
       const text = target.state.doc.toString();
-      const prelude = [`const a = deck("a", "${DocsPack}")`, /\bb\s*\./.test(text) ? `const b = deck("b", "${DocsPackB}")` : ""].filter(Boolean).join("\n");
+      const prelude = [`const a = deck("a").load("${DocsPack}")`, /\bb\s*\./.test(text) ? `const b = deck("b").load("${DocsPackB}")` : ""].filter(Boolean).join("\n");
       const loaded = await engine.live.run(prelude, `${id}-prelude`, 1);
       const failed = loaded.outputs.find((output) => output.kind === "error");
       if (failed) {

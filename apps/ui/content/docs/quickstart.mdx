@@ -26,9 +26,9 @@ the code. Tweak it, run it again, break it, fix it. One plays at a time, and
 <Step>
 ### Drop a track on a deck
 
-<Try code={`const a = deck("a", "intro").show()`} />
+<Try code={`const a = deck("a").load("intro").show()`} />
 
-`deck()` puts a pack on deck A, and `.show()` draws the deck right under your
+`deck("a")` grabs deck A, `.load()` puts a pack on it, and `.show()` draws the deck right under your
 line. Run it again and nothing reloads — the song just keeps going.
 </Step>
 

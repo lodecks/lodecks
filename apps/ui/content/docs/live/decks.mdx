@@ -4,11 +4,11 @@ description: "Two decks, ready to roll: load, play, jump, loop and take over."
 ---
 
 Two decks, `"a"` and `"b"` — the heart of every set. Grab one with `deck()`,
-drop a pack on it, and you're live. A pack loads once: run the block again
-and the song keeps playing, no hiccups.
+drop a pack on it with `.load()`, and you're live. A pack loads once: run the
+block again and the song keeps playing, no hiccups.
 
 ```js
-const a = deck("a", "intro")
+const a = deck("a").load("intro")
 const b = deck("b").load("funky")   // an id, or part of a title
 ```
 
