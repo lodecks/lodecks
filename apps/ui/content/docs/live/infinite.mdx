@@ -1,0 +1,104 @@
+---
+title: "Infinite mode"
+description: "Any song, forever. An infinite jukebox on every deck."
+---
+
+Flip a deck to **infinite** and the song never ends. lodecks listens to the
+track, finds the bars that sound alike, and keeps jumping between them on the
+bar lines. The music keeps moving — it just never runs out, and never misses
+a beat.
+
+<Try code={`a.infinite()
+a.play()
+a.cue(7)   // drop 3: most of intro's arcs are from here on
+a.show("graph")`} label="watch it branch" />
+
+The graph draws the song as a circle of bars, with an arc for every pair
+that sound alike. When the deck takes an arc, you see it.
+
+## How it works
+
+<Steps>
+<Step>
+### Listen
+When a pack loads, its stems are analysed in the background, in about a
+second: the timbre, the harmony and the loudness of every bar and beat.
+</Step>
+<Step>
+### Connect
+Bars that sound alike are joined by an arc. The graph is saved with the pack,
+so a song is only analysed once.
+</Step>
+<Step>
+### Walk
+While the song plays, the deck may take an arc at the next bar line, landing
+in the same place of a phrase elsewhere in the song. The longer it goes
+without branching, the more likely it gets.
+</Step>
+<Step>
+### Seam
+Before a jump, each stem's level just after the boundary is compared at both
+spots: jumps that would cut a vocal mid-word, or slam loud material into a
+quiet moment, are skipped. The new spot starts exactly on the downbeat while
+the old audio rings out for 120 ms.
+</Step>
+</Steps>
+
+Stems and stem voices jump together and stay on the grid. Loops, oneshots
+and effects are left alone.
+
+## In code
+
+```js
+a.infinite()                 // on
+a.infinite(false)            // off: the song plays straight
+a.infinite("beat")           // branch on beats, like the classic jukebox
+a.infinite("low")            // branch rarely, only to the closest matches
+a.infinite("beat", "high")   // both
+a.branch()                   // take an arc at the next boundary
+```
+
+| Option | |
+| --- | --- |
+| `"bar"` | branch on bar lines, at the same place of a 4-bar phrase (the default) |
+| `"beat"` | branch on beats, at the same beat of the bar |
+| `"low"` | branch rarely, only to the closest matches (the smoothest) |
+| `"mid"` | the default |
+| `"high"` | branch often, to looser matches |
+
+It is off until you turn it on, and the setting belongs to the deck: it stays
+when another pack loads.
+
+<Try code={`a.infinite("high")
+a.play()
+a.cue(7)
+a.show("graph")
+every(4, () => a.branch())   // asks for a jump every 4 bars`} label="restless" />
+
+A song only branches where it has arcs: some parts repeat a lot and are full
+of them, others are one of a kind and have none. `branch()` waits for the
+next bar that has one.
+
+## With everything else
+
+- **Loops hold it.** While a deck loops, it does not branch; letting go of
+  the loop continues the walk.
+- **Cue jumps** move the song, and the walk goes on from the new spot.
+- **Taking over**: during `take()` and auto mix, the outgoing song may take
+  one arc to reach a better place to leave from, and the deck stops
+  branching while the blend plays.
+- **Needs stems.** The analysis listens to the stems; a pack without them
+  plays straight.
+
+`deck().show("controls")` has the same switches as buttons: **∞**, the unit
+(**bar** / **beat**), **jump** and the variety (**low** / **mid** / **high**).
+
+## Where it comes from
+
+The idea is Paul Lamere's [Infinite Jukebox](https://musicmachinery.com/2012/11/12/the-infinite-jukebox/)
+(2012), which made any song on the web play forever. The branching in lodecks
+is ported from rigdern's [InfiniteJukeboxAlgorithm](https://github.com/rigdern/InfiniteJukeboxAlgorithm)
+(MIT), itself derived from UnderMybrella's Eternal Jukebox. Where those used
+Spotify's audio analysis, lodecks computes its own features from the stems,
+on the pack's own grid, and branches on bars as well as beats, which suits a
+DJ set.

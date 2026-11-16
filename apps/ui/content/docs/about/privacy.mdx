@@ -1,0 +1,35 @@
+---
+title: "Privacy"
+description: "What lodecks keeps, where, and what it sends."
+---
+
+lodecks runs in your browser and has **no accounts, no analytics and no
+tracking**.
+
+## What stays on your machine
+
+| What | Where |
+| --- | --- |
+| Your sets, their history, your effects and gifs | the browser's storage (IndexedDB) |
+| Your packs: downloaded, imported or saved | the browser's storage (IndexedDB) |
+| The stem model, once downloaded | the browser's cache |
+| Layout choices (open tabs, split size…) | the browser's local storage |
+
+Clearing the site's data in your browser removes everything kept there.
+
+## What leaves your machine
+
+- **The stem model**: the first time you import a song, lodecks asks, then
+  downloads the model from [Hugging Face](https://huggingface.co). Like any
+  download, that request is seen by Hugging Face.
+- **Packs you download**: fetched from the lodecks server. Nothing goes back
+  the other way: saving is always local.
+- **Gifs from a url**: the lodecks server fetches the url you give it.
+
+Songs you import are **not uploaded**: splitting and analysing them happens in
+your browser.
+
+## The camera
+
+`camera()` asks the browser for the camera first. The picture is only used
+for the visuals, on your machine; it is not recorded or sent.

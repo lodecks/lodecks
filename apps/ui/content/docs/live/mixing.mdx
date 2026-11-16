@@ -1,0 +1,57 @@
+---
+title: "Mixing"
+description: "Blend, sculpt and shake it up: crossfader, EQ, filters and effects."
+---
+
+Everything you'd reach for on a mixer, now a line of code — and every knob
+can move on its own, driven by the music.
+
+## Crossfader
+
+```js
+xfade("a")        // all deck A
+xfade("b", 8)     // to B, gliding over 8 bars
+xfade("mid")
+xfade(0.25)       // 0 is A, 1 is B
+xfade(lfo(16, 0, 1))  // swings between them every 16 bars
+```
+
+`mixer().show()` draws the mixer under the line, with its auto mix button.
+
+<Try code={`a.play()
+b.play()
+xfade(lfo(8, 0, 1))
+mixer().show()`} />
+
+## Per deck
+
+```js
+a.vol(0.8)              // 0…1
+a.eq("low", -1)         // "low" | "mid" | "high", −1…1; −1 kills the band
+a.filter(-0.4)          // −1 low pass … 0 open … 1 high pass
+mixer().master(0.9)     // the master volume
+```
+
+Every value can also be a [signal](/docs/live/signals):
+
+<Try code={`a.play()
+a.filter(lfo(8, -0.6, 0.6))
+a.eq("low", knob(0, -1, 0.5))`} />
+
+## Effects
+
+Each deck has an effects rack: `echo`, `reverb`, `stutter`, `gate`, `brake`
+and `filter`. They engage on the next 16th note and let go on the grid.
+
+```js
+a.fx("echo")              // on
+a.fx("echo", false)       // off
+a.fx("stutter", pad())    // while the pad is held
+```
+
+`deck().show("fx")` draws the effect pads; hold one to apply it.
+
+<Try code={`a.play()
+a.fx("echo", pad("echo"))
+a.fx("stutter", pad("stutter"))
+a.show("fx")`} />

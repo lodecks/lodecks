@@ -1,0 +1,104 @@
+---
+title: "Quickstart"
+description: "From zero to your first live set in five minutes."
+---
+
+## Open it
+
+Head to [lodecks.com/play](https://lodecks.com/play). That's it — no install,
+no setup, no account. lodecks runs right in your browser.
+
+<Callout>
+  Browsers stay silent until you interact with the page — click anywhere or
+  press a key, and you're good to go.
+</Callout>
+
+## A first set
+
+Your set is code, split into blocks by blank lines. Put the cursor in a
+block, hit **⌘↵** (Ctrl+Enter on Windows and Linux), and it runs.
+
+Every example on these pages is live — press **play** or ⌘↵ right inside
+the code. Tweak it, run it again, break it, fix it. One plays at a time, and
+`a` is always the pack **intro**.
+
+<Steps>
+<Step>
+### Drop a track on a deck
+
+<Try code={`const a = deck("a", "intro").show()`} />
+
+`deck()` puts a pack on deck A, and `.show()` draws the deck right under your
+line. Run it again and nothing reloads — the song just keeps going.
+</Step>
+
+<Step>
+### Hit play
+
+<Try code={`a.play()
+xfade("a")`} />
+
+`play()` starts the clock and brings the song in on the next phrase. You're
+live.
+</Step>
+
+<Step>
+### Jump with cues
+
+**Hot cues** are bookmarks in the song — up to 8 per pack. intro's take you to
+the intro, verse, drop, verse 2, drop 2… `cue(n)` jumps there, right on the
+beat.
+
+<Try code={`a.play()
+a.show("cues")
+next(() => a.cue(3), 4)   // to the drop, after 4 bars`} />
+
+The cue pads under the line work too: click one mid-song and you're there.
+Shift+click drops a new cue wherever the playhead is.
+</Step>
+
+<Step>
+### Get your hands on it
+
+<Try code={`a.play()
+a.filter(slider(0, -1, 1))
+a.eq("low", knob(0, -1, 0.5))`} />
+
+A slider and a knob pop up right inside the code. Drag them and the numbers
+in the code follow — your set always says exactly what you hear.
+</Step>
+
+<Step>
+### Blend into B
+
+<Try code={`a.play()
+xfade("a")
+b.tune()       // B glides into A's key
+b.play()
+xfade("b", 8)  // crossfade over 8 bars`} />
+
+Two songs, one key, a smooth 8-bar blend. (Here `b` is a small demo pack.)
+
+Want lodecks to pick the perfect moment? `b.take(16)` finds the best point in
+both songs and blends into B over 16 bars.
+</Step>
+
+<Step>
+### Light it up
+
+<Try code={`a.play()
+layers(viz("tunnel"), viz("plasma").blend("add").opacity(kick())).show()`} />
+
+A tunnel, with plasma flashing over it on every kick.
+</Step>
+</Steps>
+
+That's a set. **⌘S** saves a snapshot to its history, **⌘. ⌘.** (twice) pulls
+the plug on everything, and `help()` brings up the cheat sheet anytime.
+
+## Keep going
+
+- [The editor](/docs/live/editor) — blocks, tabs and controls inside your code.
+- [Decks](/docs/live/decks) — every way to play a track.
+- [Infinite mode](/docs/live/infinite) — songs that never end.
+- [Import a song](/docs/packs/import) — turn your own music into a pack.

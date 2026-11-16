@@ -1,0 +1,62 @@
+---
+title: "Signals"
+description: "Values that move — with the music, or with your hands."
+---
+
+A number sits still. A **signal** moves. Anything that takes a number —
+volume, filter, opacity, the crossfader — also takes a signal, and follows it
+on every frame. Hook a filter to the kick, a fader to an LFO, a visual to
+the bass, and the set starts playing itself.
+
+## From the music
+
+| Signal | |
+| --- | --- |
+| `kick()` | 1 on a kick, falling to 0 |
+| `fft(band)` | energy 0…1: 0 bass, 1 low mid, 2 high mid, 3 air |
+| `level("a")` | how loud a deck plays, 0…1 |
+| `beat()` | 0…1 across each beat |
+| `bar()` | the running bar count, with its fraction |
+
+<Try code={`a.play()
+spectrum().show()
+viz("tunnel").opacity(kick()).show()`} />
+
+## Shapes in time
+
+<Try code={`a.play()
+a.filter(lfo(4, -0.7, 0.7, "tri"))`} />
+
+```js
+lfo(16, -0.5, 0.5)          // swings once every 16 bars ("sine")
+lfo(4, 0, 1, "square")      // "sine" | "tri" | "saw" | "square"
+ramp(8, 0, 1)               // 0 → 1 over 8 bars, then stays
+```
+
+## From your hands
+
+Controls are drawn inside the code (see [the editor](/docs/live/editor)):
+
+| Control | |
+| --- | --- |
+| `slider(value, min?, max?)` | a slider |
+| `knob(value, min?, max?)` | a knob; drag up and down |
+| `toggle(on)` | a switch, 1 or 0 |
+| `pad("label"?, invert?)` | 1 while held; inverted, 0 while held |
+| `button("label", fn)` | runs fn |
+
+<Try code={`a.play()
+a.vol(slider(0.8))
+a.eq("high", knob(0, -1, 1))
+a.solo("vocals", pad("vocals"))
+button("drop", () => a.cue(3))`} />
+
+## Shaping a signal
+
+```js
+kick().mul(0.5)             // times a number or another signal
+lfo(8, 0, 1).add(0.2)
+fft(1).range(0.3, 1)        // maps 0…1 onto 0.3…1
+level("a").smooth(0.8)      // softer changes
+kick().read()               // the value right now
+```

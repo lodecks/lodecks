@@ -1,0 +1,72 @@
+/*
+ * The docs (/docs): fumadocs, in the colours of lodecks. Loaded only on
+ * the docs pages, after base.css, so the page scrolls and reads like a
+ * page again (the instrument's body is fixed and unselectable).
+ */
+@import "tailwindcss";
+@import "fumadocs-ui/css/neutral.css";
+@import "fumadocs-ui/css/preset.css";
+
+@source "../content";
+@source "../routes/docs";
+@source "../components/docs";
+
+@theme {
+  --font-sans: "Jost Variable", "Avenir Next", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+
+/* lodecks is dark only */
+:root,
+.dark {
+  --color-fd-background: #070a10;
+  --color-fd-foreground: #c9d3e6;
+  --color-fd-muted: #0c1018;
+  --color-fd-muted-foreground: #8491aa;
+  --color-fd-popover: #0c1018;
+  --color-fd-popover-foreground: #c9d3e6;
+  --color-fd-card: #0a0d14;
+  --color-fd-card-foreground: #c9d3e6;
+  --color-fd-border: #1c2433;
+  --color-fd-primary: #2be8a0;
+  --color-fd-primary-foreground: #070a10;
+  --color-fd-secondary: #121823;
+  --color-fd-secondary-foreground: #eef3ff;
+  --color-fd-accent: #121823;
+  --color-fd-accent-foreground: #eef3ff;
+  --color-fd-ring: #2be8a0;
+
+  /* code, like the live editor */
+  --shiki-foreground: #c9d3e6;
+  --shiki-background: #03050a;
+  --shiki-token-keyword: #a78bfa;
+  --shiki-token-punctuation: #56627a;
+  --shiki-token-function: #eef3ff;
+  --shiki-token-string: #ff3fb4;
+  --shiki-token-constant: #2be8a0;
+  --shiki-token-comment: #56627a;
+}
+
+/*
+ * the instrument fixes the body; the docs scroll and can be selected.
+ * Only the page scrolls: a body with its own overflow would become the
+ * scroll container, and the sticky sidebar would scroll away with it.
+ */
+html {
+  height: auto;
+  overflow: visible auto;
+}
+
+body {
+  height: auto;
+  overflow: visible;
+}
+
+html,
+body {
+  min-height: 100%;
+  user-select: text;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+}

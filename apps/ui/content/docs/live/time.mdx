@@ -1,0 +1,42 @@
+---
+title: "Time"
+description: "One clock to rule them all — and code that runs on the bars."
+---
+
+lodecks runs on one clock, and one cycle is one bar. Decks, pads, effects and
+your code all land on it — so whatever you throw at it, it stays in time.
+
+```js
+bpm(124)    // sets the master tempo
+bpm()       // reads it
+start()
+stop()
+```
+
+The tempo can also be set from the top line: click it to type a value, step
+it, tap it in time, or take a deck's tempo.
+
+## On the bars
+
+```js
+every(16, () => a.cue(1))     // every 16th bar
+at(64, () => xfade("b", 8))   // once, on bar 64 (as the top line shows it)
+next(() => b.play(), 4)       // once, on the next multiple of 4 bars
+```
+
+<Try code={`a.play()
+a.show("bars")
+every(4, () => a.jump(1))   // back to the top every 4 bars`} />
+
+Each returns a job: `const job = every(…)` then `job.cancel()`. `cancel()`
+stops everything scheduled.
+
+## The launch grid
+
+**Q** in the top line sets what pads, cue jumps and loops wait for: nothing
+(off), the next 16th, beat, bar or phrase. Click it to change.
+
+## Panic
+
+`panic()`, or **⌘.** twice, stops the decks, everything scheduled, every
+glide and every binding at once.

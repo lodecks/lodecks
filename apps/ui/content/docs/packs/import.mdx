@@ -1,0 +1,46 @@
+---
+title: "Import a song"
+description: "Drop a track. Make it yours."
+---
+
+Got a track you love? Drop it anywhere in lodecks — mp3, wav, flac, ogg,
+m4a — or pick **import a song…** from the packs menu. lodecks splits it into
+stems, finds the beat and maps the song, right on your own machine. Nothing
+gets uploaded.
+
+## What happens
+
+<Steps>
+<Step>
+### Decode
+The file is read and decoded by the browser.
+</Step>
+<Step>
+### Split into stems
+A neural network (HT-Demucs) splits the song into drums, bass, other and
+vocals. The first time, lodecks asks before downloading the model (about
+170 MB, from Hugging Face); after that it is kept in the browser.
+
+It runs on the graphics card through WebGPU when the browser has it, and on
+the processor otherwise. A four-minute song takes a minute or two.
+</Step>
+<Step>
+### Analyse
+lodecks finds the tempo and where the bars start, the key, the sections, and
+cuts the vocals into phrases for the pads.
+</Step>
+<Step>
+### Build
+The stems are compressed and everything is packed into a `.lopack`.
+</Step>
+</Steps>
+
+The import can be cancelled at any point. When it is done, the pack opens in
+the [pack editor](/docs/packs/editor): check the cues and names, play it,
+then save it.
+
+## Saving
+
+A fresh import isn't kept until you save it — **⌘S** or **save** in the
+editor keeps it in your browser, like every pack you save. It is named after
+its title on the first save, so rename it first by double-clicking the title.

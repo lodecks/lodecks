@@ -1,0 +1,225 @@
+@import "tailwindcss";
+@import "@fontsource-variable/jost";
+@import "@fontsource-variable/jetbrains-mono";
+
+@source "../";
+
+/*
+ * lodecks is styled like a piece of hardware: modules sit in a dark
+ * body, keys are low flat caps, screens are black glass with thin line
+ * graphics. Four colours carry meaning everywhere:
+ * green = deck A, rose = deck B, purple = code / instruments, grey = neutral.
+ */
+@theme {
+  --font-display:
+    "Jost Variable", "Futura", "Avenir Next", "Helvetica Neue", system-ui,
+    sans-serif;
+  --font-mono:
+    "JetBrains Mono Variable", "JetBrains Mono", "SF Mono", ui-monospace, Menlo, Monaco, "Cascadia Mono",
+    Consolas, monospace;
+
+  /* body, modules, keys, screens */
+  --color-ink: #070a10;
+  --color-chassis: #0a0d14;
+  --color-panel: #0c1018;
+  --color-raised: #121823;
+  --color-key: #161d2a;
+  --color-screen: #03050a;
+  --color-line: #1c2433;
+  --color-line-strong: #2a3446;
+
+  /* printed legends */
+  --color-dim: #56627a;
+  --color-muted: #8491aa;
+  --color-text: #c9d3e6;
+  --color-bright: #eef3ff;
+
+  /* cap colours */
+  --color-deck-a: #2be8a0;
+  --color-deck-b: #ff3fb4;
+  --color-code: #a78bfa;
+  --color-gray: #8f9bb3;
+
+  --color-ok: #7fd69c;
+  --color-warn: #f3c24f;
+  --color-bad: #ff3b30;
+
+  --animate-armed: armed 0.25s steps(2, jump-none) infinite;
+}
+
+@keyframes armed {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.35;
+  }
+}
+
+@layer base {
+  html,
+  body {
+    height: 100%;
+    background: var(--color-ink);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.4;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--color-deck-a) 35%, transparent);
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-line-strong);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  select {
+    border-radius: 2px;
+    outline: none;
+  }
+}
+
+/* deck accent, set with data-deck on any ancestor */
+[data-deck="a"] {
+  --accent: var(--color-deck-a);
+}
+[data-deck="b"] {
+  --accent: var(--color-deck-b);
+}
+
+@utility text-accent {
+  color: var(--accent, var(--color-deck-a));
+}
+@utility bg-accent {
+  background-color: var(--accent, var(--color-deck-a));
+}
+@utility border-accent {
+  border-color: var(--accent, var(--color-deck-a));
+}
+
+/* the body everything sits in */
+@utility chassis {
+  background: var(--color-chassis);
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px var(--color-line);
+}
+
+/* an area of the body holding keys, knobs or a screen */
+@utility module {
+  background: var(--color-panel);
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px var(--color-line);
+}
+
+/* black glass: thin graphics live in here */
+@utility screen {
+  background: var(--color-screen);
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px #000, 0 0 0 1px var(--color-line);
+}
+
+/* a low, flat key that travels a little when pressed */
+@utility keycap {
+  background: var(--color-key);
+  border-radius: 3px;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.05),
+    0 1px 0 #000;
+  transition:
+    transform 60ms,
+    background-color 120ms;
+  &:hover {
+    background: #1b2333;
+  }
+  &:active,
+  &[data-pressed="true"] {
+    transform: translateY(1px);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.03);
+  }
+}
+
+/* a performance pad, lit from behind when active */
+@utility pad {
+  background: var(--color-raised);
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px var(--color-line);
+  transition:
+    background 80ms,
+    transform 60ms;
+  &:active {
+    transform: translateY(1px);
+  }
+}
+@utility pad-lit {
+  background: var(--accent);
+  color: var(--color-ink);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+/* printed legend on the body */
+@utility legend {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-dim);
+}
+
+/* big thin screen numerals */
+@utility numeral {
+  font-family: var(--font-display);
+  font-weight: 250;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+/* strudel editor, made to sit inside the screen */
+.cyber-editor {
+  height: 100%;
+  user-select: text;
+  --background: transparent;
+}
+.cyber-editor .cm-editor {
+  height: 100%;
+  background: transparent !important;
+  outline: none !important;
+}
+.cyber-editor .cm-scroller {
+  font-family: var(--font-mono) !important;
+  line-height: 1.6;
+}
+.cyber-editor .cm-gutters {
+  background: transparent !important;
+  border-right: 1px solid var(--color-line) !important;
+  color: var(--color-dim) !important;
+}
+.cyber-editor .cm-activeLine,
+.cyber-editor .cm-activeLineGutter {
+  background: rgb(255 255 255 / 0.035) !important;
+}
+.cyber-editor .cm-cursor {
+  border-left: 7px solid var(--color-deck-a) !important;
+  opacity: 0.8;
+}
+.cyber-editor .cm-content {
+  caret-color: var(--color-deck-a);
+}
+

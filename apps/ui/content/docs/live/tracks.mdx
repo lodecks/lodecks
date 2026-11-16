@@ -1,0 +1,44 @@
+---
+title: "Tracks"
+description: "Take a song apart: mute, solo and drop its stems."
+---
+
+Every song is a stack of **tracks** — usually `drums`, `bass`, `other` and
+`vocals`. Pull one out, keep only one, bring them back in on the beat.
+Start typing a name and lodecks suggests the tracks of the deck you're on.
+
+```js
+a.mute("vocals")          // cut the vocals, in time with the song
+a.unmute("vocals")
+a.mute()                  // everything; a.unmute() brings it all back
+
+a.solo("drums", "bass")   // only these two
+a.solo()                  // everything again
+```
+
+Muting is instant and keeps the track running underneath, so it comes back
+in place. `stem()` instead starts or stops a track on the next quantize point:
+
+```js
+a.stem("vocals", false)   // the vocals stop at the next bar
+a.stem("vocals")          // and come back in on the grid
+```
+
+<Try code={`a.play()
+a.mute("vocals")
+next(() => a.unmute("vocals"), 4)`} />
+
+## While held
+
+The last argument can be a [signal](/docs/live/signals), such as an inline
+pad or toggle:
+
+```js
+a.solo("vocals", pad())      // only the vocals while the pad is held
+a.mute("drums", toggle(0))   // a switch for the drums
+a.mute("bass", pad("cut", true))  // inverted: the bass plays only while held
+```
+
+<Try code={`a.play()
+a.solo("vocals", pad("vocals"))
+a.mute("drums", toggle(0))`} />

@@ -1,0 +1,91 @@
+---
+title: "Decks"
+description: "Two decks, ready to roll: load, play, jump, loop and take over."
+---
+
+Two decks, `"a"` and `"b"` — the heart of every set. Grab one with `deck()`,
+drop a pack on it, and you're live. A pack loads once: run the block again
+and the song keeps playing, no hiccups.
+
+```js
+const a = deck("a", "intro")
+const b = deck("b").load("funky")   // an id, or part of a title
+```
+
+`packs()` lists your packs inline, with buttons to load them.
+
+## Playing
+
+```js
+a.play()   // the song starts on the next phrase (and the clock with it)
+a.stop()
+a.sync()   // the master tempo becomes this pack's tempo
+```
+
+<Try code={`a.sync()
+a.play()
+a.show()`} />
+
+A pack's **song** is its stems and stem voices playing together from the top.
+Its other voices (phrases, shouts, risers) are on the [pads](/docs/live/views).
+
+## Moving around
+
+Everything waits for the launch grid (**Q** in the top line), so jumps land in
+time.
+
+```js
+a.jump(33)  // to bar 33, counted like the top line (from 1)
+a.cue(2)    // to hot cue 2; on an empty cue, sets it here
+a.loop(4)   // loops 4 bars from the bar it is on; a.loop(0) lets go
+```
+
+<Try code={`a.play()
+a.show("cues")
+next(() => a.cue(3), 4)   // to the drop, on the next 4 bars`} />
+
+`every(32, () => a.jump(1))` brings the song back to the top every 32 bars.
+See [time](/docs/live/time).
+
+## Infinite
+
+```js
+a.infinite()       // the song plays forever, branching between similar bars
+a.infinite(false)
+```
+
+The deck finds bars that sound alike and jumps between them on bar lines, so
+a song never ends. See [infinite mode](/docs/live/infinite) for how it works
+and its options.
+
+<Try code={`a.infinite()
+a.play()
+a.show("graph")`} />
+
+## Taking over
+
+```js
+b.take()       // blends from A into B at the best moment, over 16 bars
+b.take(8, 2)   // over 8 bars, landing on B's hot cue 2
+```
+
+lodecks looks ahead at where the vocals, drums and bass of both songs are and
+picks the moment to start the blend. Its progress is drawn under the line.
+
+## All deck commands
+
+| Command | |
+| --- | --- |
+| `load("pack")` | loads a pack, once |
+| `play()` / `stop()` | starts / stops the song |
+| `sync()` | master tempo = this pack's tempo |
+| `jump(bar)` | jumps to bar on the next quantize point |
+| `cue(n)` | jumps to hot cue n (1–8), or sets it |
+| `loop(bars)` | loops over bars; 0 lets go |
+| `infinite(on?, unit?, variety?)` | [infinite mode](/docs/live/infinite) |
+| `branch()` | infinite: take an arc at the next boundary |
+| `take(bars?, cue?)` | takes over from the other deck |
+| `transpose`, `tune`, `untune` | see [key and pitch](/docs/live/key-and-pitch) |
+| `mute`, `unmute`, `solo`, `stem` | see [tracks](/docs/live/tracks) |
+| `vol`, `eq`, `filter`, `fx` | see [mixing](/docs/live/mixing) |
+| `show(view?)` / `hide()` | see [views](/docs/live/views) |

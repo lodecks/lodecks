@@ -1,0 +1,48 @@
+---
+title: "Key and pitch"
+description: "Two songs, one key. Shift the pitch, keep the groove."
+---
+
+Every pack knows its key — and lodecks keeps an eye on both decks for you.
+The top line shows each deck's key as it sounds right now, and turns red the
+moment they clash. One line fixes it.
+
+## Tune into the other deck
+
+```js
+b.tune()          // B glides into A's key over 1 bar
+b.tune("a", 4)    // over 4 bars
+b.tune("Am")      // into a given key
+b.tune("a", 0)    // jump straight there
+```
+
+<Try code={`a.play()
+b.play()
+xfade("mid")
+b.tune("a", 2)`} />
+
+When the scales differ (one major, one minor), lodecks aims for the relative
+key, which shares the same notes, so the shift stays small.
+
+## Back to the song's own key
+
+```js
+b.untune()        // glides back over 1 bar
+b.untune(0)       // jumps back
+b.tune("off")     // the same as untune()
+```
+
+## Transpose by hand
+
+```js
+a.transpose(2)       // up two semitones, the tempo stays
+a.transpose(-3, 8)   // down three, gliding over 8 bars
+a.transpose(0)       // back
+```
+
+<Try code={`a.play()
+a.show()
+a.transpose(-3, 2)   // run again with 0 to come back`} />
+
+While a deck is shifted, its label reads like `D# (B +4)`: it sounds in D#,
+the song is in B, shifted up 4.

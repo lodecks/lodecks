@@ -1,0 +1,92 @@
+---
+title: "The editor"
+description: "Where the music happens: write a block, run it, hear it."
+---
+
+This is your stage. Open [`/play`](https://lodecks.com/play) and you're
+looking at a **set** — the code of your performance. It saves in your browser
+as you type, and you can keep as many as you like (the set menu, top left:
+new, rename, history, delete).
+
+## Blocks
+
+Blank lines split your set into **blocks**. Run one at a time — the one under
+the cursor — and your set reads top to bottom like a script you perform:
+intro, build, drop, blend, encore.
+
+| Keys | |
+| --- | --- |
+| ⌘↵ | run the block under the cursor |
+| ⇧⌘↵ | run every block |
+| ⌥↑ / ⌥↓ | jump to the previous / next block |
+| ⌘S | keep a copy of the set in its history |
+| ⌘. ⌘. | panic: twice, to stop everything |
+| ⌘\ | split: a second editor on the right |
+
+On Windows and Linux, ⌘ is Ctrl. Running a block never stops the sound: if
+it fails, the error shows under its line and the music goes on.
+
+A bar on the left of a block shows it's live: **green** once it ran,
+**amber** when you've edited it since (hit ⌘↵ again to apply), **red** when
+its last run failed. Panic clears them all. Touch a slider, knob or pad in a
+block that isn't running yet and lodecks reminds you to activate it first.
+
+## What a block draws
+
+What a line returns is written under it (`↳ deck a · intro · 127.24 bpm · Cm`),
+and `.show()` draws things right there: a deck, the mixer, pads, visuals.
+
+```js
+deck("a", "intro").show("pads")
+mixer().show()
+```
+
+## Inline controls
+
+Some calls become controls inside the code. Drag them, and the number in the
+code follows, so the set always says what you hear.
+
+```js
+a.filter(slider(0, -1, 1))     // a slider
+a.eq("low", knob(0, -1, 0.5))  // a knob
+a.fx("echo", toggle(0))        // a switch
+a.solo("vocals", pad())        // vocals alone while the pad is held
+button("drop", () => a.cue(3)) // runs a function
+```
+
+<Try code={`a.play()
+a.filter(slider(0, -1, 1))
+a.eq("low", knob(0, -1, 0.5))
+a.solo("vocals", pad())`} />
+
+See [signals](/docs/live/signals) for what they give back.
+
+## Tabs
+
+The editor has tabs, like a code editor. The set is always the first one;
+next to it you can open:
+
+- **Effects**: hydra and GLSL visuals, from the effects menu (✎, or *new hydra
+  effect* / *new glsl shader*). ⌘↵ runs your draft, ⌘S saves it. A built-in
+  effect is never changed: its first save makes your own copy.
+- **Packs**: the [pack editor](/docs/packs/editor), from the packs menu (✎).
+  It works on a copy of its own, so editing never touches what the decks play.
+
+## The top line
+
+From left to right:
+
+- **set**, **packs**, **effects** and **help** menus.
+- **Tempo**: click it to type a tempo, step it, tap it, or take a deck's.
+- **Position** and the beat ticks of the current bar.
+- **Q**: the launch grid pads and cue jumps wait for (off, 1/16, beat, bar,
+  phrase).
+  Click to change it.
+- **The decks**: each one's pack, key and bar. A red key means the two decks
+  clash. Click a deck for its full panel.
+
+## Completion and help
+
+Typing suggests commands, track names for the deck you are on, effects,
+gifs and views; a hint above a call shows what each argument is. `help()`
+prints the cheat sheet; `help("tune")` explains one command.

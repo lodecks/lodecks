@@ -1,0 +1,120 @@
+---
+title: "Visuals"
+description: "Code the sound. See the music."
+---
+
+Kicks become pulses, basslines become motion, frequencies become color.
+Pick a ready-made effect, write your own in Hydra or GLSL, throw in a gif or
+your camera — and stack them all, synced to the music.
+
+## Effects
+
+<Try code={`a.play()
+viz("tunnel").show()`} />
+
+`viz()` plays an effect, built in or one of yours. The **effects** menu lists
+them all: ▶ adds a block that switches to it, `</>` puts its name at the
+cursor, ✎ opens its code in a tab.
+
+## Write your own
+
+Shadertoy-style GLSL, with the music as uniforms:
+
+<Try code={`a.play()
+glsl\`void mainImage(out vec4 c, in vec2 p) {
+  vec2 q = (p - 0.5 * iResolution.xy) / iResolution.y;
+  float ring = smoothstep(0.02, 0.0, abs(length(q) - uBeat * 0.7));
+  c = vec4(vec3(0.6, 0.4, 1.0) * ring, 1.0);
+}\`.show()`} />
+
+`iTime`, `iResolution`, `iChannel0` (a gif), `iChannel1` (the last frame),
+`uFft`, `uKick`, `uBeat`, `uBar`, `uBpm`, `uLevelA`, `uLevelB`, `uXfade`.
+
+Or [hydra](https://hydra.ojack.xyz):
+
+<Try code={`a.play()
+hydra\`osc(10, 0.05, () => 0.4 + fft(1)).kaleid(4).out()\`.show()`} />
+
+Inside hydra: `fft()`, `kick()`, `beat()`, `bar()`, `xfade()` and `gif()`.
+
+## Gifs
+
+Import gifs from the effects menu (a file or a url), then:
+
+```js
+gif("dancing-cats").show()
+gif("dancing-cats", "contain").show()
+```
+
+The gif loops in time with the music. `fit` is `"cover"` (the default: fills
+the screen, cropping), `"contain"` (all of it, with bars) or `"fill"`
+(stretched).
+
+In the effects menu, ▶ on a gif drops it **over** whatever is playing,
+blended in, instead of replacing it — see [stacking on the fly](#stacking-on-the-fly).
+
+## The camera
+
+```js
+camera("edges").show()
+```
+
+`"raw"`, `"matrix"`, `"silhouette"`, `"edges"`, `"thermal"`, `"halftone"`,
+`"pixel"`, `"glitch"`. The browser asks for the camera first.
+
+## Layers
+
+<Try code={`a.play()
+layers(
+  viz("tunnel"),
+  viz("plasma").blend("add").opacity(kick())
+).show()`} />
+
+The first one is at the bottom; each next one is blended over it. `blend` is
+`"normal"`, `"add"`, `"screen"` or `"multiply"`; `opacity` takes a number or a
+signal.
+
+## Stacking on the fly
+
+`layers()` builds a stack in one go. To add to what's already on screen —
+mid-set, without touching the rest — use `over()`:
+
+<Try code={`a.play()
+viz("tunnel").show()
+viz("plasma").blend("screen").opacity(kick()).over()`} />
+
+The tunnel keeps running, and the plasma lands on top of it, flashing on every
+kick. Run the `over()` line again and it updates in place — no duplicates
+piling up. `hide()` takes it back off:
+
+```js
+const flash = viz("plasma").blend("screen").over()
+flash.hide()       // gone, the tunnel stays
+```
+
+| | |
+| --- | --- |
+| `show()` | switches to this visual: it replaces everything playing |
+| `over()` | adds it on top of what's playing, keeping the rest |
+| `layers(…).show()` | replaces everything with a whole stack at once |
+
+Up to 6 layers play at once, and only one of them can be Hydra.
+
+`"screen"` and `"add"` are the friendly blends for going over something: dark
+parts let what's below shine through. With `"normal"`, a full-screen visual
+covers everything under it.
+
+## Where they show
+
+```js
+v.show()          // under the line, in place of what plays
+v.over()          // on top of what plays, keeping it
+v.hide()          // takes it off the screen (and the stack, after over())
+v.full()          // over the whole screen (Esc leaves)
+v.background()    // behind the code, darkened; background(0.3) is lighter
+v.background(false)
+```
+
+Each preview shows what its own line made. Two lines that each `show()` a
+visual draw theirs under each, even though only the last one plays — handy
+for lining up the next look while the current one is on screen.

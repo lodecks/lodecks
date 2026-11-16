@@ -1,0 +1,74 @@
+---
+title: "Views"
+description: "Put anything on screen, right under the code that made it."
+---
+
+Call `.show()` and things appear right below your line — decks, pads, meters,
+scrolling text, live graphs of the song. Your code becomes your control
+surface.
+
+## Deck views
+
+`deck("a").show(view)` draws a deck under the line. Typing the view suggests
+them all, grouped.
+
+**Controls**
+
+| View | |
+| --- | --- |
+| `"deck"` | the whole deck: waveform, platter, readouts (the default) |
+| `"controls"` | song, sync, loop, infinite and its options, key shift, eject |
+| `"pads"` | the voice and stem pads; click to play |
+| `"fx"` | the effect pads, hold to apply |
+| `"cues"` | the 8 hot cues |
+
+**The song**
+
+| View | |
+| --- | --- |
+| `"graph"` | the infinite jukebox graph and its jumps |
+| `"bars"` | the waveform; click to jump |
+| `"sections"` | the whole song: its parts, cues and where it is |
+
+**Moving with the music**
+
+| View | |
+| --- | --- |
+| `"punch"` | a punchcard sliding past the playhead |
+| `"rain"` | notes falling down lanes onto a hit line |
+| `"barcode"` | thin lines, one strip per layer |
+| `"stairs"` | a block per beat, as tall as the bass |
+| `"eq"` | a bouncing meter per layer, peaks held |
+| `"ring"` | this bar's 16 steps round a circle per layer |
+
+<Try code={`a.play()
+a.show("rain")`} label="try a view: punch, rain, barcode, stairs, eq, ring…" />
+
+`hide()` removes what `show()` drew.
+
+## Other views
+
+```js
+scope().show()        // the master waveform
+spectrum().show()     // the master spectrum
+meter("a").show()     // a deck's level
+mixer().show()
+packs()               // your packs, with buttons to load them
+```
+
+## Text
+
+<Try code={`a.play()
+marquee("lodecks").dance().show()`} />
+
+Text sliding past on the tempo. `.dance(amount)` makes the letters bounce on
+the beat, `.speed(bars)`, `.size(px)`, `.color("a" | "b" | "code" | "#hex")`
+and `.text("new words")` change it live.
+
+## Helpers
+
+| | |
+| --- | --- |
+| `print(...values)` | writes under the block |
+| `help(name?)` | the cheat sheet, or one entry |
+| `reset()` | forgets the variables the code made |
