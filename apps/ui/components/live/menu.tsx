@@ -234,7 +234,7 @@ export const LiveMenu = () => {
     <header className="border-line flex h-11 shrink-0 items-center gap-5 border-b px-4 text-[12px]">
       <div className="flex items-center gap-2">
         <img src="/logo.svg" alt="" className="h-5 w-5" />
-        <span className="text-bright tracking-[0.04em]">lodecks</span>
+        <span className="text-bright tracking-[0.04em]">lodecks.com</span>
       </div>
       <SetMenu />
       <PacksMenu className="h-6" />
