@@ -464,7 +464,7 @@ export const PackEditor = ({ instance, onClose }: { instance: Deck; onClose: () 
                       </button>
                       {layerMenu === layer && (
                         <div
-                          className="border-line-strong absolute top-5 left-0 z-50 w-40 rounded-[4px] border bg-[#0b0f17] py-1 text-[11px] shadow-[0_18px_40px_rgba(0,0,0,0.6)]"
+                          className="border-line-strong absolute top-5 left-0 z-50 w-40 rounded-[4px] border bg-popover py-1 text-[11px] shadow-[0_18px_40px_rgba(0,0,0,0.6)]"
                           onMouseDown={(event) => event.stopPropagation()}
                         >
                           <button className={MenuItem} onClick={() => { setLayerMenu(undefined); setRenamingLayer(layer); }}>

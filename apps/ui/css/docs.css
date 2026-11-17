@@ -12,7 +12,7 @@
 @source "../components/docs";
 
 @theme {
-  --font-sans: "Jost Variable", "Avenir Next", system-ui, sans-serif;
+  --font-sans: "General Sans", "Avenir Next", system-ui, sans-serif;
   --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, Menlo, monospace;
 }
 
@@ -67,6 +67,7 @@ body {
   min-height: 100%;
   user-select: text;
   font-family: var(--font-sans);
+  font-weight: 500;
   font-size: 16px;
   line-height: 1.6;
 }

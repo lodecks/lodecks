@@ -1,5 +1,5 @@
 import { useAtomValue } from "jotai";
-import { ArrowBigUp, ChevronDown, Columns2, Command, CornerDownLeft } from "lucide-react";
+import { ArrowBigUp, ChevronDown, Columns2, Command, CornerDownLeft, Settings as SettingsIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { DeckId } from "@/common/constants/deck.constant";
@@ -19,7 +19,7 @@ import type { Pane } from "@/engine/modules/live/live.module";
 import { liveEditors } from "./editor";
 import { EffectsMenu } from "./effects-menu";
 import { HelpMenu } from "./help-menu";
-import { tabsAtom } from "./tabs";
+import { openSettingsTab, tabsAtom } from "./tabs";
 import { QuantizeLabels } from "@/common/constants/quantize.constant";
 
 const ago = (time: number) => {
@@ -73,7 +73,7 @@ export const SetMenu = ({ pane = "left", className }: { pane?: Pane; className?:
         <ChevronDown size={12} strokeWidth={1.75} className="text-dim" />
       </button>
       {open && engine && (
-        <div className="border-line-strong absolute top-7 left-0 z-50 w-72 rounded-[4px] border bg-[#0b0f17] py-1 shadow-[0_18px_40px_rgba(0,0,0,0.6)]">
+        <div className="border-line-strong absolute top-7 left-0 z-50 w-72 rounded-[4px] border bg-popover py-1 shadow-[0_18px_40px_rgba(0,0,0,0.6)]">
           {naming ? (
             <input
               autoFocus
@@ -184,7 +184,7 @@ const DeckStatus = ({ id }: { id: DeckId }) => {
         </div>
       </button>
       {open && (
-        <div className="absolute top-10 right-0 z-50 flex h-[330px] w-[540px] rounded-[6px] shadow-[0_18px_40px_rgba(0,0,0,0.6)] [&>section]:flex-1 [&>section]:bg-[#0b0f17]">
+        <div className="absolute top-10 right-0 z-50 flex h-[330px] w-[540px] rounded-[6px] shadow-[0_18px_40px_rgba(0,0,0,0.6)] [&>section]:flex-1 [&>section]:bg-popover">
           <DeckView id={id} />
         </div>
       )}
@@ -240,6 +240,16 @@ export const LiveMenu = () => {
       <PacksMenu className="h-6" />
       <EffectsMenu className="h-6" />
       <HelpMenu className="h-6" />
+      {/* opens next to the set, like the pack editor */}
+      <button
+        type="button"
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={() => openSettingsTab()}
+        title="settings: palette, deck colours, new sets"
+        className="text-dim hover:text-bright flex h-6 items-center rounded-[3px] px-1.5 hover:bg-white/[0.05]"
+      >
+        <SettingsIcon size={14} strokeWidth={1.75} />
+      </button>
 
       <div className="ml-auto flex items-center gap-4 font-mono">
         <TempoControl className={cn("px-1.5 py-0.5 tabular-nums", transport.started ? "text-bright" : "text-dim")}>

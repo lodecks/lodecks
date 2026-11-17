@@ -32,7 +32,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
   vec3 color = texture(iChannel0, p).rgb;
   if (p.x < 0.0 || p.x > 1.0 || p.y < 0.0 || p.y > 1.0) color = vec3(0.0);
 
-  vec3 deck = mix(vec3(0.17, 0.91, 0.63), vec3(1.0, 0.25, 0.71), uXfade);
+  vec3 deck = mix(uDeckA, uDeckB, uXfade);
   color = mix(color, color * deck * 1.6, TINT);
   color += deck * uKick * FLASH * 0.5;
   fragColor = vec4(color, 1.0);
@@ -81,11 +81,12 @@ export const ShaderPresets: ShaderPreset[] = [
     name: "tunnel",
     description: "neon rings rushing in, one per beat, in the colours of the decks playing",
     code: `// tunnel — neon rings rushing in, one ring per beat, in the colours of
-// the decks that play: green for A, rose for B. With both playing each
+// the decks that play, each deck in its own colour. With both playing each
 // ring takes its own shade between them, centred on the crossfader, so
 // the colours mix through the tunnel and fade over to the next deck.
-const vec3 DECK_A = vec3(0.17, 0.91, 0.63);
-const vec3 DECK_B = vec3(1.0, 0.25, 0.71);
+// the deck colours from the settings
+#define DECK_A uDeckA
+#define DECK_B uDeckB
 const vec3 GLOW = vec3(0.6, 0.4, 1.0);
 
 float hash(float n) { return fract(sin(n * 12.9898) * 43758.5453); }

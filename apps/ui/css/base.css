@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "@fontsource-variable/jost";
 @import "@fontsource-variable/jetbrains-mono";
 
 @source "../";
@@ -11,9 +10,7 @@
  * green = deck A, rose = deck B, purple = code / instruments, grey = neutral.
  */
 @theme {
-  --font-display:
-    "Jost Variable", "Futura", "Avenir Next", "Helvetica Neue", system-ui,
-    sans-serif;
+  --font-display: var(--font-mono);
   --font-mono:
     "JetBrains Mono Variable", "JetBrains Mono", "SF Mono", ui-monospace, Menlo, Monaco, "Cascadia Mono",
     Consolas, monospace;
@@ -25,6 +22,8 @@
   --color-raised: #121823;
   --color-key: #161d2a;
   --color-screen: #03050a;
+  /* menus and popovers */
+  --color-popover: #0b0f17;
   --color-line: #1c2433;
   --color-line-strong: #2a3446;
 

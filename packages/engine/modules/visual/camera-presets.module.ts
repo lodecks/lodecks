@@ -18,12 +18,13 @@ vec3 cam(vec2 uv) {
 float luma(vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }
 float hash1(float n) { return fract(sin(n) * 43758.5453); }
 float hash2(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-// green (deck A) → purple (middle) → rose (deck B), following the
-// crossfader; mixed straight, the middle would be grey
+// deck A's colour → a bright middle → deck B's, following the crossfader;
+// mixed straight, the middle would be grey, so it is lifted back up
 vec3 deckColor() {
-  vec3 a = vec3(0.17, 0.91, 0.63);
-  vec3 mid = vec3(0.66, 0.55, 0.98);
-  vec3 b = vec3(1.0, 0.25, 0.71);
+  vec3 a = uDeckA;
+  vec3 b = uDeckB;
+  vec3 mid = (a + b) * 0.5;
+  mid *= max(max(max(a.r, a.g), a.b), max(max(b.r, b.g), b.b)) / max(max(max(mid.r, mid.g), mid.b), 1e-3);
   return uXfade < 0.5 ? mix(a, mid, uXfade * 2.0) : mix(mid, b, uXfade * 2.0 - 1.0);
 }
 `;
@@ -79,8 +80,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
   float shape = shapeAt(uv);
   float edge = abs(shapeAt(uv + vec2(px.x, 0.0)) - shapeAt(uv - vec2(px.x, 0.0)))
              + abs(shapeAt(uv + vec2(0.0, px.y)) - shapeAt(uv - vec2(0.0, px.y)));
-  // the figure in a green-to-rose gradient that rolls with the bar
-  vec3 fill = mix(vec3(0.17, 0.91, 0.63), vec3(1.0, 0.25, 0.71), 0.5 + 0.5 * sin(uv.y * 3.0 + uBar * 1.57));
+  // the figure in a gradient between the deck colours that rolls with the bar
+  vec3 fill = mix(uDeckA, uDeckB, 0.5 + 0.5 * sin(uv.y * 3.0 + uBar * 1.57));
   vec3 color = fill * shape * (0.6 + uKick * 0.7);
   color += vec3(1.0) * min(1.0, edge) * (0.5 + uFft.z * 1.5);
   // behind: dim bands that roll with the beat

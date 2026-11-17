@@ -27,7 +27,13 @@ export const Route = createFileRoute("/docs/$")({
       { title: getTitle(loaderData?.title ? `${loaderData.title} · docs` : "docs") },
       ...(loaderData?.description ? [{ name: "description", content: loaderData.description }] : [])
     ],
-    links: [{ rel: "stylesheet", href: docsCss }]
+    links: [
+      // General Sans, from Fontshare: its licence lets sites use it, not repos ship it
+      { rel: "preconnect", href: "https://api.fontshare.com" },
+      { rel: "preconnect", href: "https://cdn.fontshare.com", crossOrigin: "anonymous" },
+      { rel: "stylesheet", href: "https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap" },
+      { rel: "stylesheet", href: docsCss }
+    ]
   })
 });
 

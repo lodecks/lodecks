@@ -136,7 +136,7 @@ export const CommandPalette = () => {
   return (
     <div className="fixed inset-0 z-[80] flex justify-center bg-black/30 pt-[12vh]" onMouseDown={close}>
       <div
-        className="border-line-strong flex h-fit max-h-[60vh] w-[620px] flex-col overflow-hidden rounded-[6px] border bg-[#0b0f17] shadow-[0_24px_60px_rgba(0,0,0,0.7)]"
+        className="border-line-strong flex h-fit max-h-[60vh] w-[620px] flex-col overflow-hidden rounded-[6px] border bg-popover shadow-[0_24px_60px_rgba(0,0,0,0.7)]"
         onMouseDown={(event) => event.stopPropagation()}
       >
         <div className="border-line flex items-center gap-2 border-b px-3">

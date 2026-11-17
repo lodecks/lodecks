@@ -21,7 +21,8 @@ const shade = (id: DeckId, timbre: number, alpha = 1) => {
 };
 
 // the cue colours of the waveform and the cue pads, by slot
-const CueColors = [Colors.a, Colors.tan, Colors.gray, Colors.b];
+// read on each draw: the colours follow the settings
+const cueColors = () => [Colors.a, Colors.tan, Colors.gray, Colors.b];
 
 /**
  * The song as the infinite jukebox draws it: loudness bars coloured by
@@ -98,7 +99,7 @@ export const DeckJukebox = ({ id, className }: { id: DeckId; className?: string 
       cues.forEach((cue, index) => {
         const from = at(cue.bar);
         const to = at(cues[index + 1]?.bar ?? count * unit);
-        const color = CueColors[(cue.slot - 1) % CueColors.length];
+        const color = cueColors()[(cue.slot - 1) % 4];
         g.globalAlpha = 0.45;
         g.fillStyle = color;
         g.fillRect(from, top + 1, Math.max(1, to - from - 1), strip);

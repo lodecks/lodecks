@@ -96,7 +96,7 @@ const Row = ({ pack, onDone }: { pack: CatalogPack; onDone: () => void }) => {
         {menu && (
           // fixed, so the list's scrolling doesn't clip it
           <div
-            className="border-line-strong fixed z-[60] w-72 whitespace-nowrap rounded-[4px] border bg-[#0b0f17] py-1 text-[12px] shadow-[0_12px_30px_rgba(0,0,0,0.6)]"
+            className="border-line-strong fixed z-[60] w-72 whitespace-nowrap rounded-[4px] border bg-popover py-1 text-[12px] shadow-[0_12px_30px_rgba(0,0,0,0.6)]"
             ref={menuBox}
             style={menu}
           >
@@ -168,7 +168,7 @@ export const PacksMenu = ({ className }: { className?: string }) => {
         <ChevronDown size={12} strokeWidth={1.75} className="text-dim" />
       </button>
       {open && (
-        <div className="border-line-strong absolute top-8 left-0 z-50 w-[420px] rounded-[4px] border bg-[#0b0f17] py-1 text-[12px] shadow-[0_18px_40px_rgba(0,0,0,0.6)]">
+        <div className="border-line-strong absolute top-8 left-0 z-50 w-[420px] rounded-[4px] border bg-popover py-1 text-[12px] shadow-[0_18px_40px_rgba(0,0,0,0.6)]">
           <button
             className="text-bright flex w-full items-center gap-2 px-3 py-1.5 text-left hover:bg-white/[0.05] disabled:opacity-40"
             disabled={running}

@@ -1,3 +1,4 @@
+import { themeScript, useTheme } from "@/hooks/theme.hook";
 import { EngineContextProvider } from "@/providers/engine.provider";
 import { RouterContext } from "@/router";
 import { defineRoute, getTitle } from "@/utils/route.util";
@@ -50,13 +51,25 @@ export const Route = createRootRouteWithContext<RouterContext>()({
   shellComponent: RootDocument
 });
 
+// the saved palette and deck colours, before the first paint
+const ThemeScript = themeScript();
+
+/** Keeps the theme in step with the settings */
+const Theme = () => {
+  useTheme();
+  return null;
+};
+
 function RootDocument({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className="dark">
+    // the theme script sets <html>'s style before react hydrates it
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: ThemeScript }} />
         <HeadContent />
       </head>
       <body>
+        <Theme />
         <EngineContextProvider>{children}</EngineContextProvider>
         <Scripts />
       </body>

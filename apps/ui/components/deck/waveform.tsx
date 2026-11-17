@@ -13,7 +13,8 @@ type WaveformProps = {
   seek?: boolean;
 };
 
-const CueColors = [Colors.a, Colors.tan, Colors.gray, Colors.b];
+// read on each draw: the colours follow the settings
+const cueColors = () => [Colors.a, Colors.tan, Colors.gray, Colors.b];
 
 // each song's loudest peak, so the cells use their whole height
 const loudest = new WeakMap<Float32Array, number>();
@@ -121,10 +122,10 @@ export const DeckWaveform = ({ id, window, className, seek }: WaveformProps) => 
     }
 
     // cues: a line with caps, numbered, coloured in turn
-    ctx.font = `500 ${Math.round(9 * ratio)}px "Jost Variable", sans-serif`;
+    ctx.font = `500 ${Math.round(9 * ratio)}px "JetBrains Mono Variable", monospace`;
     ctx.textBaseline = "top";
     for (const [slot, cue] of Object.entries(state.cues)) {
-      const color = CueColors[(Number(slot) - 1) % CueColors.length];
+      const color = cueColors()[(Number(slot) - 1) % 4];
       for (let offset = -bars; offset <= bars; offset += bars) {
         const cx = Math.round(x(cue.bar + offset));
         if (cx < -10 || cx > width + 10) continue;

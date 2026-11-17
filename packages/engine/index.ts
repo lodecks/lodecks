@@ -13,6 +13,7 @@ import { Hydra } from "./providers/hydra.provider";
 import { Stretch } from "./providers/stretch.provider";
 import { Strudel } from "./providers/strudel.provider";
 import { Transport } from "./providers/transport.provider";
+import { Settings } from "./providers/settings.provider";
 import { Visuals } from "./providers/visuals.provider";
 import { Emitter, Store } from "./utils/store.util";
 
@@ -26,6 +27,7 @@ class EngineFacade {
   stretch = Stretch;
   hydra = Hydra;
   visuals = Visuals;
+  settings = Settings;
   compositor = Compositor;
   // every pack (server, browser, fresh imports) and the song importer
   catalog = Catalog;

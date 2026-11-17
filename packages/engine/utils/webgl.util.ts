@@ -1,5 +1,6 @@
 import type { GifPlayer } from "../modules/visual/gif.module";
 import { shaderErrors, wrapShader } from "../modules/visual/glsl.module";
+import { Settings } from "../providers/settings.provider";
 
 /** Music and gif inputs every GLSL effect gets as uniforms */
 export type ShaderInputs = {
@@ -24,7 +25,7 @@ void main() {
 export const Uniforms = [
   "iResolution", "iTime", "iTimeDelta", "iFrame", "iMouse", "iChannel0", "iChannel1",
   "iChannelResolution", "uFft", "uKick", "uBeat", "uBar", "uBpm", "uLevelA", "uLevelB",
-  "uXfade", "uGif"
+  "uXfade", "uGif", "uDeckA", "uDeckB"
 ] as const;
 
 export type Program = {
@@ -151,6 +152,9 @@ export const setUniforms = (gl: WebGL2RenderingContext, program: Program, frame:
   gl.uniform1f(u.uLevelB, inputs.levelB);
   gl.uniform1f(u.uXfade, inputs.xfade);
   gl.uniform1f(u.uGif, inputs.gif?.loaded ? 1 : 0);
+  const decks = Settings.deckRgb();
+  gl.uniform3f(u.uDeckA, ...decks.a);
+  gl.uniform3f(u.uDeckB, ...decks.b);
 
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, frame.gifTexture);

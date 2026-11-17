@@ -58,7 +58,7 @@ export const TempoControl = ({ className, children }: { className?: string; chil
         {children}
       </button>
       {open && engine && (
-        <div className="border-line-strong absolute top-8 left-0 z-50 flex w-64 flex-col gap-2 rounded-[4px] border bg-[#0b0f17] p-3 text-[12px] shadow-[0_18px_40px_rgba(0,0,0,0.6)]">
+        <div className="border-line-strong absolute top-8 left-0 z-50 flex w-64 flex-col gap-2 rounded-[4px] border bg-popover p-3 text-[12px] shadow-[0_18px_40px_rgba(0,0,0,0.6)]">
           <div className="flex items-baseline gap-2">
             <input
               ref={input}

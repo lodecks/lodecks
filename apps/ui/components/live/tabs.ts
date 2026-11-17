@@ -62,6 +62,10 @@ export const openEffectTab = (pane: Pane, id: string) =>
 export const packTab = (packId: string) => `pack:${packId}`;
 export const packOfTab = (id: string) => (id.startsWith("pack:") ? id.slice(5) : undefined);
 
+/** The settings, as a tab: palette, deck colours, new sets */
+export const SettingsTab = "settings";
+export const openSettingsTab = (pane: Pane = "left") => openEffectTab(pane, SettingsTab);
+
 /** Opens a pack in the pack editor, as a tab */
 export const openPackTab = (packId: string, pane: Pane = "left") => openEffectTab(pane, packTab(packId));
 

@@ -1,10 +1,11 @@
 import { useAtomValue } from "jotai";
-import { FileCode2, Package, X } from "lucide-react";
+import { FileCode2, Package, Settings as SettingsIcon, X } from "lucide-react";
 import { useEffect, useReducer, useRef } from "react";
 
 import type { Pane } from "@/engine/modules/live/live.module";
 
 import { PackEditor } from "@/components/pack/editor";
+import { SettingsPanel } from "@/layouts/settings";
 import type { DeckState } from "@/common/types/deck.type";
 import type { Engine } from "@/engine/index";
 
@@ -16,7 +17,7 @@ import { cn } from "~/utils/classes.util";
 
 import { LiveEditor } from "./editor";
 import { EffectEditor, dropEffectEditor, isDirty, onDirty } from "./effect-editor";
-import { closeTab, loadTabs, packOfTab, packTab, pruneTabs, showTab, tabsAtom } from "./tabs";
+import { SettingsTab, closeTab, loadTabs, packOfTab, packTab, pruneTabs, showTab, tabsAtom } from "./tabs";
 
 type EngineType = typeof Engine;
 // while the engine is not there yet
@@ -56,6 +57,7 @@ export const PaneTabStrip = ({ pane }: { pane: Pane }) => {
         {tabs.effects.map((id) => {
           const packId = packOfTab(id);
           if (packId) return <PackTabLabel key={id} pane={pane} packId={packId} active={tabs.active === id} />;
+          if (id === SettingsTab) return <SettingsTabLabel key={id} pane={pane} active={tabs.active === id} />;
           const effect = visuals.effects.find((item) => item.id === id);
           const name = effect?.name ?? "…";
           const active = tabs.active === id;
@@ -98,7 +100,7 @@ export const PaneTabStrip = ({ pane }: { pane: Pane }) => {
 const Prune = ({ ids, loaded }: { ids: string[]; loaded: boolean }) => {
   const key = ids.join(",");
   useEffect(() => {
-    if (loaded) pruneTabs((id) => !!packOfTab(id) || ids.includes(id));
+    if (loaded) pruneTabs((id) => !!packOfTab(id) || id === SettingsTab || ids.includes(id));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, loaded]);
   return null;
@@ -150,6 +152,36 @@ const PackTabLabel = ({ pane, packId, active }: { pane: Pane; packId: string; ac
   );
 };
 
+/** The settings' tab: nothing to save, they apply as they change */
+const SettingsTabLabel = ({ pane, active }: { pane: Pane; active: boolean }) => (
+  <div
+    role="tab"
+    className={cn(
+      "group flex h-7 shrink-0 cursor-pointer items-center gap-1.5 border-r border-[var(--color-line)] pr-1.5 pl-3 text-[12px]",
+      active ? "text-bright bg-white/[0.04]" : "text-dim hover:text-text"
+    )}
+    onMouseDown={(event) => {
+      event.preventDefault();
+      if (event.button === 1) closeTab(pane, SettingsTab);
+    }}
+    onClick={() => showTab(pane, SettingsTab)}
+    title="settings · palette, deck colours, new sets"
+  >
+    <SettingsIcon size={12} strokeWidth={1.75} className="text-muted shrink-0" />
+    <span className="truncate">settings</span>
+    <button
+      className="hover:text-bright flex h-4 w-4 shrink-0 items-center justify-center rounded-[2px] hover:bg-white/[0.08]"
+      onClick={(event) => {
+        event.stopPropagation();
+        closeTab(pane, SettingsTab);
+      }}
+      title="close (middle click)"
+    >
+      <X size={11} strokeWidth={1.75} className={cn("opacity-0 group-hover:opacity-100", active && "opacity-60")} />
+    </button>
+  </div>
+);
+
 /** The pack editor in a tab, on a deck of its own; Ctrl+S saves it */
 const PackTab = ({ pane, packId }: { pane: Pane; packId: string }) => {
   const save = usePackSave();
@@ -187,7 +219,15 @@ export const EditorPane = ({ pane }: { pane: Pane }) => {
     <>
       {/* only once an effect is open: a set alone needs no tabs */}
       {tabs.effects.length > 0 && <PaneTabStrip pane={pane} />}
-      {packId ? <PackTab key={tabs.active} pane={pane} packId={packId} /> : open ? <EffectEditor key={tabs.active} id={tabs.active} /> : null}
+      {packId ? (
+        <PackTab key={tabs.active} pane={pane} packId={packId} />
+      ) : tabs.active === SettingsTab && open ? (
+        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto">
+          <SettingsPanel />
+        </div>
+      ) : open ? (
+        <EffectEditor key={tabs.active} id={tabs.active} />
+      ) : null}
       {/* the set's editor stays mounted behind other tabs: it is what loads the set */}
       <div className={cn("flex min-h-0 min-w-0 flex-1 flex-col", open && "hidden")}>
         {pane === "right" ? (

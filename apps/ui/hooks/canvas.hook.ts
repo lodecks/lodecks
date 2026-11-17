@@ -52,7 +52,8 @@ export const useCanvas = (draw: Draw, enabled = true) => {
   return ref as RefObject<HTMLCanvasElement>;
 };
 
-// screen colours, kept in step with css/base.css
+// screen colours, kept in step with css/base.css; the theme updates them
+// (see theme.hook.ts), so read them when drawing, not once
 export const Colors = {
   a: "#2be8a0",
   b: "#ff3fb4",

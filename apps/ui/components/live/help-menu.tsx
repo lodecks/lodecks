@@ -59,7 +59,7 @@ export const HelpMenu = ({ className }: { className?: string }) => {
         <ChevronDown size={12} strokeWidth={1.75} className="text-dim" />
       </button>
       {open && (
-        <div className="border-line-strong absolute top-8 left-0 z-50 w-72 rounded-[4px] border bg-[#0b0f17] py-1 text-[12px] shadow-[0_18px_40px_rgba(0,0,0,0.6)]">
+        <div className="border-line-strong absolute top-8 left-0 z-50 w-72 rounded-[4px] border bg-popover py-1 text-[12px] shadow-[0_18px_40px_rgba(0,0,0,0.6)]">
           {Links.map(item)}
           <div className="bg-line my-1 h-px" />
           {About.map(item)}

@@ -41,7 +41,7 @@ export const ImportPanel = () => {
   const working = state.stage !== "done" && state.stage !== "error";
 
   return (
-    <div className="border-line-strong fixed right-4 bottom-4 z-[65] w-[420px] rounded-[5px] border bg-[#0b0f17]/95 p-3 text-[12px] shadow-[0_18px_50px_rgba(0,0,0,0.7)] backdrop-blur-sm">
+    <div className="border-line-strong fixed right-4 bottom-4 z-[65] w-[420px] rounded-[5px] border bg-popover/95 p-3 text-[12px] shadow-[0_18px_50px_rgba(0,0,0,0.7)] backdrop-blur-sm">
       <div className="flex items-center gap-2">
         <span className="legend !text-[8px]">import</span>
         <span className="text-bright min-w-0 flex-1 truncate">{state.title}</span>

@@ -9,6 +9,7 @@ import { Key, parseKey, shiftKey } from "@/common/utils/music.util";
 
 import { Analysis } from "../../providers/analysis.provider";
 import { Audio } from "../../providers/audio.provider";
+import { Settings } from "../../providers/settings.provider";
 import { Transport } from "../../providers/transport.provider";
 import { Visuals } from "../../providers/visuals.provider";
 import { Emitter, Store } from "../../utils/store.util";
@@ -1104,7 +1105,7 @@ export class Live {
       const last = storage.get(LastSetKey);
       let set = sets.find((item) => item.id === last) ?? sets[0];
       if (!set) {
-        set = { id: `set-${Date.now().toString(36)}`, name: "first set", code: StarterSet, updatedAt: Date.now() };
+        set = { id: `set-${Date.now().toString(36)}`, name: "first set", code: Settings.store.get().starterCode ? StarterSet : "", updatedAt: Date.now() };
         await Library.saveSet(set).catch(() => {});
         sets = [set];
       }
@@ -1188,7 +1189,9 @@ export class Live {
     const deck: DeckId = pane === "right" ? "b" : "a";
     const packs = await this.packList().catch(() => []);
     const pack = (deck === "b" ? packs[1] : undefined)?.id ?? packs[0]?.id ?? "my-pack";
-    const set = { id: `set-${Date.now().toString(36)}`, name: title, code: SampleSet(title, pack, deck), updatedAt: Date.now() };
+    // with the starter code switched off in the settings, a new set is empty
+    const code = Settings.store.get().starterCode ? SampleSet(title, pack, deck) : "";
+    const set = { id: `set-${Date.now().toString(36)}`, name: title, code, updatedAt: Date.now() };
     await Library.saveSet(set);
     this.code[pane] = set.code;
     this.use(set, await this.refreshSets(), pane);
