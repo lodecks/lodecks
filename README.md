@@ -44,6 +44,11 @@ bun run deploy         # build, then wrangler deploy
 bucket with `bun run upload --local`). The Worker is about 5.5 MB gzipped,
 over the free plan's 3 MB, so it needs Workers Paid.
 
+Usage analytics with [PostHog](https://posthog.com) are off unless the build
+has a key: copy `apps/ui/.env.example` to `apps/ui/.env` and set
+`VITE_POSTHOG_KEY` (and `VITE_POSTHOG_HOST` for the EU cloud) before
+`bun run deploy`. The key is read at build time.
+
 ## What's inside
 
 ```

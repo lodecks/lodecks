@@ -7,7 +7,9 @@ import {
   Scripts,
   createRootRouteWithContext
 } from "@tanstack/react-router";
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
+
+import { startAnalytics } from "~/utils/analytics.util";
 
 import appCss from "~/css/base.css?url";
 
@@ -60,6 +62,12 @@ const Theme = () => {
   return null;
 };
 
+/** PostHog, when the build has a key */
+const Analytics = () => {
+  useEffect(() => void startAnalytics(), []);
+  return null;
+};
+
 function RootDocument({ children }: { children: ReactNode }) {
   return (
     // the theme script sets <html>'s style before react hydrates it
@@ -70,6 +78,7 @@ function RootDocument({ children }: { children: ReactNode }) {
       </head>
       <body>
         <Theme />
+        <Analytics />
         <EngineContextProvider>{children}</EngineContextProvider>
         <Scripts />
       </body>

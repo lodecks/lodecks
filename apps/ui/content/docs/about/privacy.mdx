@@ -3,8 +3,8 @@ title: "Privacy"
 description: "What lodecks keeps, where, and what it sends."
 ---
 
-lodecks runs in your browser and has **no accounts, no analytics and no
-tracking**.
+lodecks runs in your browser and has **no accounts**. lodecks.com counts
+visits with anonymous usage analytics; nothing you make is sent.
 
 ## What stays on your machine
 
@@ -25,6 +25,11 @@ Clearing the site's data in your browser removes everything kept there.
 - **Packs you download**: fetched from the lodecks server. Nothing goes back
   the other way: saving is always local.
 - **Gifs from a url**: the lodecks server fetches the url you give it.
+- **Usage analytics**: lodecks.com sends page views and clicks to
+  [PostHog](https://posthog.com), with no screen recording and no profile of
+  you. Your code, sets and songs are never part of it. A build of lodecks
+  without a PostHog key (`VITE_POSTHOG_KEY`), like one you run yourself,
+  sends nothing.
 - **The docs' font**: these docs load General Sans from
   [Fontshare](https://www.fontshare.com), which sees that request. The app
   itself uses no outside fonts.
