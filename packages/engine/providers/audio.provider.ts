@@ -124,6 +124,29 @@ class AudioProvider {
     return bus;
   }
 
+  private recording?: { delay: DelayNode; out: MediaStreamAudioDestinationNode };
+
+  /**
+   * The master as a media stream, for recording: what the speakers get,
+   * after the limiter, without the headphone cue. Taken from the analyser,
+   * which passes the master through and is never rerouted by the cue modes.
+   * `delay` holds the sound back by as long as the recorded picture lags.
+   */
+  recordStream() {
+    this.create();
+    if (!this.recording) {
+      const delay = new DelayNode(this.ctx, { maxDelayTime: 1, delayTime: 0 });
+      const out = new MediaStreamAudioDestinationNode(this.ctx, { channelCount: 2 });
+      this.analyser.connect(delay).connect(out);
+      this.recording = { delay, out };
+    }
+    const { delay, out } = this.recording;
+    return {
+      stream: out.stream,
+      delay: (seconds: number) => delay.delayTime.setValueAtTime(Math.min(1, Math.max(0, seconds)), this.ctx.currentTime)
+    };
+  }
+
   // must be called from a user gesture
   async resume() {
     this.create();

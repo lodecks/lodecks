@@ -1,5 +1,5 @@
-import { useAtomValue } from "jotai";
-import { ArrowBigUp, ChevronDown, Columns2, Command, CornerDownLeft, Settings as SettingsIcon } from "lucide-react";
+import { useAtomValue, useSetAtom } from "jotai";
+import { ArrowBigUp, ChevronDown, Columns2, Command, CornerDownLeft, Settings as SettingsIcon, Video } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { DeckId } from "@/common/constants/deck.constant";
@@ -8,6 +8,7 @@ import { useDeck, useEngine, useTransport } from "@/hooks/engine.hook";
 import { useFrame } from "@/hooks/frame.hook";
 import { useLiveState } from "@/hooks/live.hook";
 import { cn } from "~/utils/classes.util";
+import { recordModeAtom } from "~/utils/recorder.util";
 
 import { DeckView } from "@/components/deck/view";
 import { DeckKey } from "@/components/partial/key-match";
@@ -231,7 +232,8 @@ export const LiveMenu = () => {
   }, !!engine);
 
   return (
-    <header className="border-line flex h-11 shrink-0 items-center gap-5 border-b px-4 text-[12px]">
+    <header className="border-line flex min-h-11 shrink-0 flex-wrap items-center gap-x-5 gap-y-1 border-b px-4 py-1.5 text-[12px] whitespace-nowrap">
+      {/* wraps to a second row when narrow (a 9:16 recording) */}
       <div className="flex items-center gap-2">
         <img src="/logo.svg" alt="" className="h-5 w-5" />
         <span className="text-bright tracking-[0.04em]">lodecks.com</span>
@@ -250,6 +252,7 @@ export const LiveMenu = () => {
       >
         <SettingsIcon size={14} strokeWidth={1.75} />
       </button>
+      <RecordButton />
 
       <div className="ml-auto flex items-center gap-4 font-mono">
         <TempoControl className={cn("px-1.5 py-0.5 tabular-nums", transport.started ? "text-bright" : "text-dim")}>
@@ -324,5 +327,22 @@ export const LiveStatus = () => {
         <Shortcut keys={["mod", "S"]}>save</Shortcut>
       </span>
     </footer>
+  );
+};
+
+/** Recording mode: frames the app in a video's shape, to record it */
+const RecordButton = () => {
+  const setMode = useSetAtom(recordModeAtom);
+  const mode = useAtomValue(recordModeAtom);
+  return (
+    <button
+      type="button"
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={() => setMode(mode ? undefined : "landscape")}
+      title="recording mode: frame lodecks for a video (YouTube, Reels, TikTok, Shorts)"
+      className={cn("flex h-6 items-center rounded-[3px] px-1.5 hover:bg-white/[0.05]", mode ? "text-bright" : "text-dim hover:text-bright")}
+    >
+      <Video size={14} strokeWidth={1.75} />
+    </button>
   );
 };

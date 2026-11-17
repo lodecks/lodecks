@@ -1,3 +1,6 @@
+import { getDefaultStore } from "jotai";
+
+import { recordModeAtom } from "~/utils/recorder.util";
 
 import { DeckId } from "@/common/constants/deck.constant";
 
@@ -50,6 +53,8 @@ export const useCommands = (): PaletteCommand[] => {
   // —— the live editor ——
   add({ id: "run.block", title: "Run block", group: "code", keys: "⌘↵", run: () => focusedEditor().runCurrent?.() });
   add({ id: "run.all", title: "Run all blocks", group: "code", keys: "⇧⌘↵", run: () => focusedEditor().runAll?.() });
+  add({ id: "record.landscape", title: "Recording mode: 16:9 (YouTube)", group: "video", run: () => getDefaultStore().set(recordModeAtom, "landscape") });
+  add({ id: "record.portrait", title: "Recording mode: 9:16 (Reels, TikTok, Shorts)", group: "video", run: () => getDefaultStore().set(recordModeAtom, "portrait") });
   add({ id: "panic", title: "Panic: stop decks, schedules and bindings", group: "code", keys: "⌘. ⌘.", run: () => engine.live.panic() });
   add({
     id: "inline.clear",

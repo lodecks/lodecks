@@ -3,6 +3,7 @@ import { LiveEditors } from "@/components/live/split";
 import { LiveMenu, LiveStatus } from "@/components/live/menu";
 import { CommandPalette } from "@/components/partial/command-palette";
 import { ImportPanel } from "@/components/partial/import-panel";
+import { RecordFrame } from "@/components/partial/record-frame";
 import { Unlock } from "@/components/partial/unlock";
 import { useDropToImport } from "@/hooks/import.hook";
 
@@ -14,7 +15,9 @@ export const LayoutLive = () => {
   // a song dropped anywhere becomes a pack
   useDropToImport();
   return (
-  <div className="bg-ink relative flex h-screen flex-col">
+  // in recording mode, framed in the video's shape
+  <RecordFrame>
+  <div className="bg-ink relative flex h-full flex-col">
     {/* visuals set with .background() sit under everything else */}
     <LiveBackground />
     <div className="relative z-10 flex min-h-0 flex-1 flex-col">
@@ -30,5 +33,6 @@ export const LayoutLive = () => {
     <CommandPalette />
     <Unlock />
   </div>
+  </RecordFrame>
   );
 };
