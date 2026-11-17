@@ -90,6 +90,10 @@ const writeNumber = (view: EditorView, dom: HTMLElement, value: number, min: num
   return { pos, id: controlId(view.state, pos) };
 };
 
+// the widget a control's dom shows now: editing the line (a new min, max or
+// label) swaps the widget but keeps the dom, so its handlers read this
+const current = new WeakMap<HTMLElement, ControlWidget>();
+
 class ControlWidget extends WidgetType {
   constructor(
     readonly kind: ControlKind,
@@ -115,9 +119,21 @@ class ControlWidget extends WidgetType {
   }
 
   updateDOM(dom: HTMLElement) {
+    // a different kind of control needs a dom of its own
+    const previous = current.get(dom);
+    if (previous && previous.kind !== this.kind) return false;
+    current.set(dom, this);
+    if (this.kind === "button") {
+      dom.textContent = this.label;
+      return true;
+    }
+    if (this.kind === "pad") {
+      // keeps its dom, so a pad held down stays held while the line is edited
+      dom.textContent = this.label;
+      dom.classList.toggle("cm-live-inverted", !!this.value);
+      return true;
+    }
     if (dom.dataset.dragging) return true;
-    // a pad keeps its dom (and its held state) while the line is edited
-    if (this.kind === "pad") return true;
     this.paint(dom, this.value);
     return true;
   }
@@ -142,6 +158,9 @@ class ControlWidget extends WidgetType {
   toDOM(view: EditorView) {
     const dom = document.createElement("span");
     dom.className = `cm-live-control cm-live-${this.kind}`;
+    current.set(dom, this);
+    // the widget as it is now, not as it was when the dom was made
+    const now = () => current.get(dom) ?? this;
 
     if (this.kind === "button") {
       dom.textContent = this.label;
@@ -208,18 +227,19 @@ class ControlWidget extends WidgetType {
     let start = { x: 0, y: 0, value: this.value };
     const move = (event: PointerEvent) => {
       if (!dom.dataset.dragging) return;
+      const { min, max } = now();
       let value: number;
       if (this.kind === "slider") {
         const rect = dom.getBoundingClientRect();
-        value = this.min + (this.max - this.min) * Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+        value = min + (max - min) * Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
       } else {
         // knobs turn with vertical drags, finer with shift
-        const span = this.max - this.min;
+        const span = max - min;
         const delta = ((start.y - event.clientY) / (event.shiftKey ? 600 : 150)) * span;
-        value = Math.min(this.max, Math.max(this.min, start.value + delta));
+        value = Math.min(max, Math.max(min, start.value + delta));
       }
-      this.paint(dom, value);
-      const { id } = writeNumber(view, dom, value, this.min, this.max);
+      now().paint(dom, value);
+      const { id } = writeNumber(view, dom, value, min, max);
       if (id && (!this.host.known || this.host.known(id))) this.host.set(id, value);
     };
     dom.addEventListener("pointerdown", (event) => {
@@ -229,11 +249,18 @@ class ControlWidget extends WidgetType {
       const pos = view.posAtDOM(dom);
       live(view, this.host, pos, controlId(view.state, pos));
       const match = NumberPattern.exec(view.state.sliceDoc(pos, pos + 32));
-      start = { x: event.clientX, y: event.clientY, value: match ? Number(match[1]) : this.value };
+      start = { x: event.clientX, y: event.clientY, value: match ? Number(match[1]) : now().value };
       if (this.kind === "slider") move(event);
     });
     dom.addEventListener("pointermove", move);
-    const end = () => delete dom.dataset.dragging;
+    // the line may have changed while dragging: show the range it has now
+    const end = () => {
+      delete dom.dataset.dragging;
+      const widget = now();
+      const pos = view.posAtDOM(dom);
+      const match = NumberPattern.exec(view.state.sliceDoc(pos, pos + 32));
+      widget.paint(dom, match ? Number(match[1]) : widget.value);
+    };
     dom.addEventListener("pointerup", end);
     dom.addEventListener("pointercancel", end);
     return dom;
