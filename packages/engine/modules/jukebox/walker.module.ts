@@ -11,6 +11,22 @@ type Chances = { min: number; max: number; delta: number };
 // how similar an arc must be to be used: low variety is the smoothest
 export const Strictness: Record<Variety, number> = { low: 0.45, mid: 0.6, high: 0.8 };
 
+// on top of that, arcs further than this many times the song's median
+// distance go too: in a song where every arc is poor, the percentile alone
+// would still keep the poor ones
+export const Ceiling: Record<Variety, number> = { low: 1.15, mid: 1.3, high: 1.6 };
+
+/**
+ * Where the song's phrases are, in quanta: `phrase` is how many quanta make
+ * 8 bars, `starts` are the sections' first quanta. With them, jumps prefer
+ * phrase starts and keep to the same place in a phrase, like a dj would.
+ */
+export type Phrasing = { phrase: number; starts?: number[] };
+
+// branch chance at a phrase or section start, and anywhere else
+const PhraseBoost = 2.5;
+const InsideDamp = 0.5;
+
 // the original numbers are per beat; bars get calmer ones, since a jump
 // every couple of bars sounds restless in a dj set
 const Chance: Record<JukeUnit, Record<Variety, Chances>> = {
@@ -29,6 +45,7 @@ const Chance: Record<JukeUnit, Record<Variety, Chances>> = {
 export class JukeboxWalker {
   private neighbors: number[][];
   private chance: number;
+  private starts: Set<number>;
   // arcs kept after dropping the least similar ones
   readonly kept: number;
 
@@ -43,12 +60,16 @@ export class JukeboxWalker {
     private unit: JukeUnit,
     public variety: Variety = "mid",
     private random: () => number = Math.random,
-    strictness = Strictness[variety]
+    strictness = Strictness[variety],
+    private phrasing?: Phrasing
   ) {
     const distances = graph.edges.map((edge) => edge[2]).sort((a, b) => a - b);
-    const cutoff = distances.length
+    const percentile = distances.length
       ? distances[Math.min(distances.length - 1, Math.floor(distances.length * strictness))]
       : Infinity;
+    const median = distances[Math.floor(distances.length / 2)];
+    const cutoff = median > 0 ? Math.min(percentile, median * Ceiling[variety]) : percentile;
+    this.starts = new Set(phrasing?.starts ?? []);
 
     this.neighbors = Array.from({ length: graph.count }, () => []);
     let kept = 0;
@@ -81,9 +102,45 @@ export class JukeboxWalker {
 
     const { min, max, delta } = this.chances;
     this.chance = Math.min(max, this.chance + delta);
-    const branch = this.random() < this.chance;
+    const branch = this.random() < this.chance * this.weight(index);
     if (branch) this.chance = min;
     return branch;
+  }
+
+  /** Whether `index` starts a phrase (every 8 bars) or a section */
+  isPhraseStart(index: number) {
+    const phrase = this.phrasing?.phrase;
+    return !!phrase && (index % phrase === 0 || this.starts.has(index));
+  }
+
+  // jumps are likelier where a phrase starts, rarer inside one
+  private weight(index: number) {
+    if (!this.phrasing) return 1;
+    return this.isPhraseStart(index) ? PhraseBoost : InsideDamp;
+  }
+
+  /**
+   * Arcs from `index` that keep the place in an 8-bar phrase first, then
+   * the rest (which keep the place in 4 bars, as every arc does)
+   */
+  ranked(index: number) {
+    const list = this.candidates(index);
+    const phrase = this.phrasing?.phrase;
+    if (!phrase) return { aligned: list, rest: [] as number[] };
+    const aligned = list.filter((dest) => (dest - index) % phrase === 0);
+    return { aligned, rest: list.filter((dest) => (dest - index) % phrase !== 0) };
+  }
+
+  /**
+   * Every earlier quantum at the same place in an 8-bar phrase: where the
+   * last branch point may go when none of its arcs sounds clean
+   */
+  phraseMates(index: number) {
+    const phrase = this.phrasing?.phrase;
+    if (!phrase) return [];
+    const mates: number[] = [];
+    for (let at = index - phrase; at >= 0; at -= phrase) mates.push(at);
+    return mates;
   }
 
   /** Whether to branch before `index`; ramps and resets the chance */

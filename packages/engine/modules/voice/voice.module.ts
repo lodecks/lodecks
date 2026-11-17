@@ -55,6 +55,14 @@ export class Voice {
   private endTime?: number;
   // where a oneshot was in its file at a known audio time
   private anchor?: { input: number; time: number; rate: number };
+  // a second stretch node with the stem loaded, so jumps of a stretched
+  // stem can crossfade: the new place starts on it, the old node fades out
+  // and becomes the next spare
+  private spare?: StretchNode;
+  private spareWanted = false;
+  private spareLoading = false;
+  // the node fading out after a jump comes back as the spare
+  private spareReturning = false;
 
   constructor(
     private host: VoiceHost,
@@ -337,24 +345,45 @@ export class Voice {
   }
 
   /**
+   * Keeps (or lets go of) a spare stretch node for crossfaded jumps. Only
+   * while it is wanted (the deck's infinite mode) and the stem is stretched;
+   * a full pool is left alone, jumps then seek as before.
+   */
+  keepSpare(wanted: boolean) {
+    this.spareWanted = wanted;
+    if (!wanted || !this.stretched || this.track.type !== "stem") {
+      if (this.spare) {
+        Stretch.release(this.spare);
+        this.spare = undefined;
+      }
+      return;
+    }
+    if (this.spare || this.spareLoading || this.spareReturning || !Stretch.spareAllowed()) return;
+    this.spareLoading = true;
+    const samples = this.loaded.buffer.getChannelData(0).slice();
+    Stretch.acquire().then((node) => {
+      this.spareLoading = false;
+      if (!this.spareWanted || this.spare || Stretch.broken.has(node)) return Stretch.release(node);
+      // transferred, not copied (see begin)
+      node.addBuffers([samples], [samples.buffer]);
+      this.spare = node;
+    });
+  }
+
+  /**
    * Moves to where the song is at `time` with a crossfade: the new audio
    * starts exactly on time, so the downbeat keeps its attack, while the old
    * audio keeps ringing and fades out over `fade` seconds. Smoother than
-   * `resync` for jumps. Plain playback only: it shares the decoded buffer,
-   * so overlapping costs nothing. Stretched stems seek instead.
+   * `resync` for jumps. Plain playback shares the decoded buffer, so
+   * overlapping costs nothing; a stretched stem needs its spare node.
    */
   crossfade(time: number, fade: number) {
     const source = this.source;
-    if (
-      !source ||
-      fade <= 0 ||
-      this.state.status !== "playing" ||
-      this.track.type === "oneshot" ||
-      // a stretched stem seeks inside its own stretcher, which smooths the
-      // seek itself; a second stretcher would mean loading the whole stem again
-      this.stretched ||
-      !!source.stretch
-    ) {
+    if (!source || fade <= 0 || this.state.status !== "playing" || this.track.type === "oneshot") {
+      return this.resync(time);
+    }
+    if (this.stretched || source.stretch) {
+      if (this.stretched && source.stretch && !source.pending && this.spare) return this.crossfadeStretched(source, time, fade);
       return this.resync(time);
     }
 
@@ -363,8 +392,38 @@ export class Voice {
     this.fadeOut(source, time, fade);
   }
 
-  // equal power fade, so the overlap does not dip or bulge in level
-  private fadeOut(source: Source, time: number, fade: number) {
+  // the new place starts on the spare node; the old node fades out and,
+  // its stem still loaded, is the spare for the next jump
+  private crossfadeStretched(source: Source, time: number, fade: number) {
+    const ctx = Audio.ctx;
+    const node = this.spare!;
+    this.spare = undefined;
+    const when = Math.max(time, ctx.currentTime + 0.005);
+    const place = this.position(Transport.cycleAt(when));
+
+    const fresh: Source = { gain: new GainNode(ctx, { gain: 0 }), stretch: node };
+    fresh.gain.connect(this.out);
+    node.connect(fresh.gain);
+    fresh.gain.gain.setValueAtTime(0, when);
+    fresh.gain.gain.linearRampToValueAtTime(1, when + Fade);
+    node.schedule({
+      output: when,
+      outputTime: when,
+      active: true,
+      input: place.offset,
+      rate: this.rate,
+      semitones: this.host.transpose,
+      loopStart: place.loop?.[0] ?? 0,
+      loopEnd: place.loop?.[1] ?? 0
+    });
+    this.source = fresh;
+    this.spareReturning = true;
+    this.fadeOut(source, when, fade, true);
+  }
+
+  // equal power fade, so the overlap does not dip or bulge in level. With
+  // `keep`, the faded stretch node becomes the spare instead of going back
+  private fadeOut(source: Source, time: number, fade: number, keep = false) {
     const ctx = Audio.ctx;
     const when = Math.max(time, ctx.currentTime + 0.005);
     const gain = source.gain.gain;
@@ -387,7 +446,13 @@ export class Voice {
       () => {
         source.gain.disconnect();
         source.plain?.disconnect();
-        if (source.stretch) Stretch.release(source.stretch);
+        const node = source.stretch;
+        if (keep) this.spareReturning = false;
+        if (!node) return;
+        if (keep && this.spareWanted && !this.spare && !Stretch.broken.has(node)) {
+          node.disconnect();
+          this.spare = node;
+        } else Stretch.release(node);
       },
       (when - ctx.currentTime + fade) * 1000 + 150
     );
@@ -503,6 +568,7 @@ export class Voice {
   }
 
   dispose() {
+    this.keepSpare(false);
     this.end(this.source, Audio.ctx.currentTime);
     this.source = undefined;
     setTimeout(() => {

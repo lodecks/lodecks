@@ -67,10 +67,21 @@ const voiceState = (track: PackTrack): VoiceState => ({
 
 // crossfade lengths, in seconds
 const JumpFade = 0.06;
-const JukeboxFade = 0.12;
+// jukebox jumps: drums cut short so two kicks never flam, the rest rings
+// out over part of a beat
+const DrumFade = 0.04;
+const TailFade = { min: 0.11, max: 0.25, beats: 0.4 };
 // how much of the boundary to compare, and how different it may sound
 const SeamWindow = 0.12;
 const SeamLimit = 0.45;
+// a cut vocal is the most audible cut
+const VocalWeight = 2;
+
+const isDrums = (track: PackTrack) => /drum|perc|kick|beat/i.test(`${track.id} ${track.name}`);
+// a crossfade length, or one per track
+type Fade = number | ((voice: Voice) => number);
+
+const isVocal = (track: PackTrack) => /vocal|vox|voice|acapella/i.test(`${track.id} ${track.name}`);
 
 // how far ahead of a loop end the jump back is scheduled
 const LoopLookahead = 0.15;
@@ -424,10 +435,10 @@ export class Deck implements VoiceHost {
   }
 
   /** Moves the song to `bar` at transport `cycle`, crossfading */
-  scheduleJump(bar: number, cycle: number, fade = JukeboxFade) {
+  scheduleJump(bar: number, cycle: number, fade?: number) {
     if (!this.store.get().pack) return;
     this.fresh = false;
-    this.jumpAt(bar, cycle, fade);
+    this.jumpAt(bar, cycle, fade ?? ((voice) => this.jukeboxFade(voice)));
   }
 
   /** Starts the song's main tracks at transport `cycle`, from song `bar` */
@@ -481,7 +492,10 @@ export class Deck implements VoiceHost {
     const { pack, jukeUnit, variety } = this.store.get();
     const graph = pack?.jukebox?.[jukeUnit];
     this.walkAt = undefined;
-    this.walker = graph ? new JukeboxWalker(graph, jukeUnit, variety) : undefined;
+    // quanta per bar: 1 in bar mode, the beats of a bar in beat mode
+    const perBar = jukeUnit === "bar" ? 1 : (pack?.timeSignature[0] ?? 4);
+    const phrasing = { phrase: 8 * perBar, starts: (pack?.sections ?? []).map((section) => Math.round(section.bar * perBar)) };
+    this.walker = graph ? new JukeboxWalker(graph, jukeUnit, variety, Math.random, undefined, phrasing) : undefined;
     this.setJukebox({ arcs: this.walker?.arcs ?? 0 });
   }
 
@@ -529,6 +543,10 @@ export class Deck implements VoiceHost {
   private tickJukebox(cycle: number) {
     const state = this.store.get();
     const walker = this.walker;
+    // stretched stems keep a spare stretcher while the jukebox walks, so
+    // its jumps crossfade instead of seeking
+    const spares = state.infinite && !!walker;
+    for (const voice of this.followers()) voice.keepSpare(spares && voice.active);
     if (!state.infinite || !walker || state.loop?.active || this.jumping || this.holdJukebox) return;
     if (!walker.graph.count || !this.songPlaying()) return;
 
@@ -548,33 +566,59 @@ export class Deck implements VoiceHost {
     const index = ((next % count) + count) % count;
     if (!walker.wantsBranch(index, this.forceJump)) return;
 
-    // of the similar spots, take the one with the cleanest seam
-    let dest: number | undefined;
-    let best = Infinity;
-    for (const option of walker.candidates(index)) {
-      const cost = this.seamCost(index * unit, option * unit);
-      if (cost < best) {
-        best = cost;
-        dest = option;
+    // of the similar spots, take the one with the cleanest seam: those at
+    // the same place in an 8-bar phrase first, the others only if none fits
+    const limit = this.forceJump ? 0.8 : SeamLimit;
+    const best = (options: number[]) => {
+      let dest: number | undefined;
+      let cost = Infinity;
+      for (const option of options) {
+        if (option === index) continue;
+        const seam = this.seamCost(index * unit, option * unit, unit);
+        if (seam < cost) {
+          cost = seam;
+          dest = option;
+        }
       }
+      return { dest, cost };
+    };
+    const { aligned, rest } = walker.ranked(index);
+    let pick = best(aligned);
+    if (pick.dest === undefined || pick.cost > limit) {
+      const other = best(rest);
+      if (other.cost < pick.cost) pick = other;
     }
-    const limit = walker.isLastBranchPoint(index) ? Infinity : this.forceJump ? 0.8 : SeamLimit;
-    if (dest === undefined || dest === index || best > limit) return;
+    // the last branch point must jump, or the song ends: when none of its
+    // arcs is clean, any earlier spot at the same place in a phrase will do
+    if (walker.isLastBranchPoint(index) && (pick.dest === undefined || pick.cost > limit)) {
+      const mate = best(walker.phraseMates(index));
+      if (mate.cost < pick.cost) pick = mate;
+    }
+    const { dest, cost } = pick;
+    if (dest === undefined || (cost > limit && !walker.isLastBranchPoint(index))) return;
 
     if (this.forceJump) this.forceJump = false;
-    this.jumpAt(dest * unit, at, JukeboxFade);
-    this.setJukebox({ lastJump: { from: index, to: dest, at, seam: Math.round(best * 100) / 100 }, forced: false });
+    this.jumpAt(dest * unit, at, (voice) => this.jukeboxFade(voice));
+    this.setJukebox({ lastJump: { from: index, to: dest, at, seam: Math.round(cost * 100) / 100 }, forced: false });
   }
 
   // puts every sounding voice back on the grid, shortly from now; with
   // `fade` the old audio overlaps the new one (jumps), otherwise it cuts
-  private resync(time = Audio.ctx.currentTime + 0.08, stemsOnly = false, fade = 0) {
+  private resync(time = Audio.ctx.currentTime + 0.08, stemsOnly = false, fade: Fade = 0) {
     for (const voice of this.all()) {
       if (!voice.active) continue;
       if (stemsOnly && voice.track.type !== "stem") continue;
-      if (fade > 0) voice.crossfade(time, fade);
+      const length = typeof fade === "number" ? fade : fade(voice);
+      if (length > 0) voice.crossfade(time, length);
       else voice.resync(time);
     }
+  }
+
+  /** A jukebox jump's crossfade for a track: short on drums, longer on the rest */
+  private jukeboxFade(voice: Voice) {
+    if (isDrums(voice.track)) return DrumFade;
+    const beat = 60 / Transport.bpm;
+    return Math.min(TailFade.max, Math.max(TailFade.min, beat * TailFade.beats));
   }
 
   // -- song position, cues and loops
@@ -601,27 +645,56 @@ export class Deck implements VoiceHost {
   }
 
   // song jumps (cues, loops, the jukebox) crossfade instead of cutting
-  private jumpAt(bar: number, at: number, fade = JumpFade) {
+  private jumpAt(bar: number, at: number, fade: Fade = JumpFade) {
     this.jumping = { at, origin: at - bar };
     this.resync(Transport.timeAt(at), true, fade);
   }
 
   /**
-   * How audible a jump from song bar `from` to `to` would be, 0..1: per
-   * track, the level that should have played next against the level that
-   * will play instead, just after the boundary. Catches cutting a vocal
-   * mid-word or slamming loud material into a quiet moment.
+   * How audible a jump from song bar `from` to `to` would be, 0..1, per
+   * track and summed (vocals count double):
+   * - the boundary: the level that should have played next against the
+   *   level that will play instead, just after it;
+   * - the arrangement: the track's level across the quantum that would have
+   *   played against the one that will, in 4 slices, so a track that drops
+   *   out or comes in a moment later counts too;
+   * - a sound running across the boundary (a word, a held note) must go on
+   *   in the landing's first beat, or it is cut mid-way.
    */
-  private seamCost(from: number, to: number) {
+  private seamCost(from: number, to: number, unit = 1) {
+    const pack = this.store.get().pack;
+    if (!pack) return 0;
+    const bar = (60 / pack.bpm) * pack.timeSignature[0];
+    const beat = bar / pack.timeSignature[0];
+    const span = Math.max(SeamWindow, unit * bar);
     let difference = 0;
     let total = 0;
     for (const voice of this.followers()) {
       if (!voice.active || voice.state.muted) continue;
+      const weight = isVocal(voice.track) ? VocalWeight : 1;
+
       const before = voice.levelAt(from, -0.06, 0);
       const next = voice.levelAt(from, 0, SeamWindow);
       const landing = voice.levelAt(to, 0, SeamWindow);
-      difference += Math.abs(next - landing);
-      total += Math.max(before, next, landing);
+      difference += weight * Math.abs(next - landing);
+      total += weight * Math.max(before, next, landing);
+
+      for (let slice = 0; slice < 4; slice++) {
+        const a = voice.levelAt(from, (slice * span) / 4, ((slice + 1) * span) / 4);
+        const b = voice.levelAt(to, (slice * span) / 4, ((slice + 1) * span) / 4);
+        difference += (weight * Math.abs(a - b)) / 2;
+        total += (weight * Math.max(a, b)) / 2;
+      }
+
+      // 0 when nothing carries over the boundary, 1 when it carries on as loud
+      const loudest = Math.max(before, next);
+      const carries = loudest > 1e-4 ? Math.min(before, next) / loudest : 0;
+      if (carries > 0.3) {
+        const goesOn = voice.levelAt(from, 0, beat);
+        const lands = voice.levelAt(to, 0, beat);
+        difference += weight * carries * Math.abs(goesOn - lands);
+        total += weight * carries * Math.max(goesOn, lands);
+      }
     }
     return total > 0.001 ? difference / total : 0;
   }

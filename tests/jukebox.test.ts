@@ -132,10 +132,11 @@ describe("jukebox smoothing", () => {
   };
 
   test("drops the least similar arcs, but never the last way back", () => {
-    const walker = new JukeboxWalker(graph, "bar", "mid", () => 0, 0.6);
-    // cutoff is the distance at the 60th percentile: 60, so only 70 goes…
-    expect(walker.candidates(3)).toEqual([8]);
-    // …except from the last branch point, which keeps every arc
+    const walker = new JukeboxWalker(graph, "bar", "high", () => 0, 0.6);
+    // cutoff is the distance at the 60th percentile: 60, so only 70 goes
+    // (high variety's ceiling, 1.6 × the median 30 = 48, would drop 60 too)
+    expect(walker.candidates(2)).toEqual([6]);
+    // …and from the last branch point, which keeps every arc, nothing goes
     expect(walker.candidates(9)).toEqual([2]);
 
     const strict = new JukeboxWalker(graph, "bar", "mid", () => 0, 0.2);
@@ -156,5 +157,64 @@ describe("jukebox smoothing", () => {
     expect(walker.wantsBranch(1, true)).toBe(true);
     expect(walker.wantsBranch(4, true)).toBe(false);
     expect(walker.wantsBranch(9)).toBe(true);
+  });
+});
+
+describe("jukebox phrasing", () => {
+  test("arcs far beyond the song's typical distance go, whatever the percentile", () => {
+    const graph = {
+      count: 16,
+      lastBranchPoint: 15,
+      edges: [
+        [0, 8, 20],
+        [1, 9, 21],
+        [2, 10, 22],
+        [3, 11, 23],
+        [4, 12, 40],
+        [15, 7, 90]
+      ] as [number, number, number][],
+      loudness: new Array(16).fill(0.5),
+      hue: new Array(16).fill(200)
+    };
+    // every arc kept by the percentile; mid's ceiling is 1.3 × the median 22
+    const walker = new JukeboxWalker(graph, "bar", "mid", () => 0, 1);
+    expect(walker.candidates(3)).toEqual([11]);
+    expect(walker.candidates(4)).toEqual([]);
+    // the way back from the end is never dropped
+    expect(walker.candidates(15)).toEqual([7]);
+  });
+
+  const graph = {
+    count: 32,
+    lastBranchPoint: 31,
+    edges: [
+      [8, 20, 10],
+      [8, 24, 11],
+      [9, 13, 10]
+    ] as [number, number, number][],
+    loudness: new Array(32).fill(0.5),
+    hue: new Array(32).fill(200)
+  };
+
+  test("arcs keeping the place in an 8-bar phrase come first", () => {
+    const walker = new JukeboxWalker(graph, "bar", "high", () => 0, 1, { phrase: 8 });
+    expect(walker.ranked(8)).toEqual({ aligned: [24], rest: [20] });
+    expect(walker.ranked(9)).toEqual({ aligned: [], rest: [13] });
+  });
+
+  test("the end may go back to any earlier bar at its place in a phrase", () => {
+    const walker = new JukeboxWalker(graph, "bar", "high", () => 0, 1, { phrase: 8 });
+    expect(walker.phraseMates(27)).toEqual([19, 11, 3]);
+    expect(new JukeboxWalker(graph, "bar", "high").phraseMates(27)).toEqual([]);
+  });
+
+  test("jumps are likelier at a phrase or section start than inside one", () => {
+    // random 0.1: above bar/mid's first chance (0.08), below it × 2.5
+    const at = (index: number) =>
+      new JukeboxWalker(graph, "bar", "mid", () => 0.1, 1, { phrase: 8, starts: [9] }).wantsBranch(index);
+    expect(at(8)).toBe(true);
+    expect(at(9)).toBe(true);
+    expect(new JukeboxWalker(graph, "bar", "mid", () => 0.07, 1, { phrase: 8 }).wantsBranch(9)).toBe(false);
+    expect(new JukeboxWalker(graph, "bar", "mid", () => 0.07, 1).wantsBranch(9)).toBe(true);
   });
 });

@@ -2,8 +2,11 @@ import SignalsmithStretch, { StretchNode } from "signalsmith-stretch";
 
 import { Audio } from "./audio.provider";
 
-// stretch nodes keep running once created, so the pool is capped and reused
-const MaxNodes = 16;
+// stretch nodes keep running once created, so the pool is capped and reused.
+// Room for two decks of stems, their jukebox spares, and pads
+const MaxNodes = 24;
+// spares only take a node while this many stay free for what plays
+const SpareHeadroom = 6;
 
 class StretchProvider {
   private free: StretchNode[] = [];
@@ -28,6 +31,11 @@ class StretchProvider {
   /** A node can be had right now, without waiting for one to free up */
   available() {
     return this.free.length > 0 || this.total < MaxNodes;
+  }
+
+  /** Enough nodes left that a spare (a nice-to-have) may take one */
+  spareAllowed() {
+    return this.free.length + (MaxNodes - this.total) > SpareHeadroom;
   }
 
   async acquire(): Promise<StretchNode> {
