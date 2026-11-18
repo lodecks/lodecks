@@ -130,7 +130,7 @@ export const DeckJukebox = ({ id, className }: { id: DeckId; className?: string 
     // where the song is
     const unit = JukeUnitBars[state.jukeUnit];
     const running = engine!.transport.running;
-    const position = running ? instance.songBar() / unit : -state.origin / unit;
+    const position = instance.songBar() / unit;
     const current = Math.floor(position) % count;
     ctx.fillStyle = Colors.paper;
     ctx.fillRect(x(current) - ratio, 0, 2 * ratio, top + strip);

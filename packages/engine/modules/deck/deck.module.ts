@@ -44,6 +44,7 @@ const emptyState = (id: DeckId): DeckState => ({
   stems: {},
   cues: {},
   origin: 0,
+  parked: 0,
   volume: 0.9,
   eq: { low: 0, mid: 0, high: 0 },
   filter: 0,
@@ -101,8 +102,8 @@ export class Deck implements VoiceHost {
   // kept so it can be saved again: the decoded files are let go
   private bytes?: Uint8Array;
   private token = 0;
-  // the song has not been started since the pack was loaded
-  private fresh = true;
+  // the song position at the last tick it played, where it parks on a stop
+  private lastSong = 0;
   private jumping?: { at: number; origin: number };
   private rack?: FxRack;
   private previewSource?: AudioBufferSourceNode;
@@ -145,6 +146,7 @@ export class Deck implements VoiceHost {
         Transport.ready().then(() => this.startSong());
       }
       if (!started) this.stopAll();
+      this.park();
     });
   }
 
@@ -245,13 +247,27 @@ export class Deck implements VoiceHost {
     }
   }
 
-  // the first stem after a load starts the song from its first bar
+  // the first stem of a stopped song starts it from where it is parked
   onStart(voice: Voice, cycle: number) {
-    if (voice.track.type !== "stem" || !this.fresh) return;
-    this.fresh = false;
+    const parked = this.store.get().parked;
+    if (voice.track.type !== "stem" || parked === undefined) return;
     this.jumping = undefined;
-    // the song's first bar starts exactly where the track starts
-    this.store.set({ origin: cycle });
+    this.lastSong = parked;
+    // the parked bar starts exactly where the track starts
+    this.store.set({ origin: cycle - parked, parked: undefined });
+  }
+
+  /**
+   * Once none of the song's tracks plays, the song holds its place: on the
+   * beat it stopped on, where a play, a stem pad or a cue picks it up.
+   */
+  private park() {
+    if (this.store.get().parked !== undefined || !this.loaded) return;
+    const followers = this.followers();
+    if (!followers.length || followers.some((voice) => voice.active)) return;
+    const beats = this.pack.timeSignature[0];
+    this.jumping = undefined;
+    this.store.set({ parked: loopPosition(Math.round(this.lastSong * beats) / beats, this.songBars) });
   }
 
   // -- packs
@@ -275,10 +291,11 @@ export class Deck implements VoiceHost {
 
       const { pack } = loaded;
       this.loaded = loaded;
-      this.fresh = true;
+      this.lastSong = 0;
       this.store.set({
         pack,
         origin: 0,
+        parked: 0,
         cues: Object.fromEntries(
           pack.cues.map((cue) => [cue.slot, { bar: cue.bar, name: cue.name }])
         ),
@@ -383,6 +400,7 @@ export class Deck implements VoiceHost {
 
   stopAll(cycle?: number) {
     for (const voice of this.all()) voice.stop(cycle);
+    this.park();
   }
 
   private tick(cycle: number) {
@@ -394,9 +412,11 @@ export class Deck implements VoiceHost {
       this.store.set({ origin: jumping.origin });
     }
 
+    if (this.store.get().parked === undefined) this.lastSong = this.songBar(cycle);
     for (const voice of this.all()) {
       if (voice.active) voice.tick(cycle);
     }
+    this.park();
 
     this.tickJukebox(cycle);
     this.tickLoop(cycle);
@@ -437,7 +457,7 @@ export class Deck implements VoiceHost {
   /** Moves the song to `bar` at transport `cycle`, crossfading */
   scheduleJump(bar: number, cycle: number, fade?: number) {
     if (!this.store.get().pack) return;
-    this.fresh = false;
+    if (this.store.get().parked !== undefined) return this.jump(bar);
     this.jumpAt(bar, cycle, fade ?? ((voice) => this.jukeboxFade(voice)));
   }
 
@@ -447,10 +467,10 @@ export class Deck implements VoiceHost {
     if (!followers.length) return;
     if (followers.some((voice) => voice.active)) return this.scheduleJump(bar, cycle);
 
-    this.fresh = false;
     this.startWithClock = false;
     this.jumping = undefined;
-    this.store.set({ origin: cycle - bar });
+    this.lastSong = bar;
+    this.store.set({ origin: cycle - bar, parked: undefined });
     for (const voice of followers) voice.start(cycle);
   }
 
@@ -625,17 +645,20 @@ export class Deck implements VoiceHost {
 
   /** Song position in bars at `cycle` */
   songBar(cycle = Transport.now()) {
-    if (!this.store.get().pack) return 0;
+    const { pack, parked } = this.store.get();
+    if (!pack) return 0;
+    if (parked !== undefined) return parked;
     return loopPosition(cycle - this.originAt(cycle), this.songBars);
   }
 
   /** Moves the song to `bar` on the next quantize point, staying in phase */
   jump(bar: number, quantize?: Quantize) {
     if (!this.store.get().pack) return;
-    this.fresh = false;
 
-    if (!Transport.running) {
-      this.store.set({ origin: -bar });
+    // a stopped song moves its parked place, and starts from there
+    if (this.store.get().parked !== undefined || !Transport.running) {
+      this.jumping = undefined;
+      this.store.set({ parked: loopPosition(bar, this.songBars) });
       return;
     }
 
@@ -705,9 +728,10 @@ export class Deck implements VoiceHost {
     if (loop?.active) {
       this.store.set({ loop: { ...loop, start: loop.start + bars } });
     }
-    const at = Transport.running ? Transport.next("beat") : 0;
+    const parked = this.store.get().parked !== undefined || !Transport.running;
+    const at = parked ? 0 : Transport.next("beat");
     const target = this.songBar(at) + bars;
-    if (!Transport.running) return this.jump(loopPosition(target, this.songBars));
+    if (parked) return this.jump(target);
     this.jumpAt(target, at);
   }
 
@@ -781,8 +805,8 @@ export class Deck implements VoiceHost {
   }
 
   private tickLoop(cycle: number) {
-    const loop = this.store.get().loop;
-    if (!loop?.active || this.jumping) return;
+    const { loop, parked } = this.store.get();
+    if (!loop?.active || this.jumping || parked !== undefined) return;
 
     const origin = this.store.get().origin;
     // unwrapped song position, the loop end is compared in transport cycles

@@ -28,8 +28,11 @@ export type DeckState = {
   stems: Record<string, VoiceState>;
   cues: Record<number, { bar: number; name: string }>;
   loop?: DeckLoop;
-  // song position in bars = transport cycle - origin
+  // song position in bars = transport cycle - origin, while the song plays
   origin: number;
+  // while the song is stopped: the bar it starts again from (it holds its
+  // place instead of running on with the clock)
+  parked?: number;
   volume: number;
   eq: { low: number; mid: number; high: number };
   filter: number;

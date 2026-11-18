@@ -53,8 +53,7 @@ export const DeckWaveform = ({ id, window, className, seek }: WaveformProps) => 
     if (!deck || !state?.pack || !peaks) return;
 
     const bars = deck.songBars;
-    const running = engine!.transport.running;
-    const position = running ? deck.songBar() : -state.origin;
+    const position = deck.songBar();
     const span = window || bars;
     const from = window ? position - span / 2 : 0;
     const x = (bar: number) => ((bar - from) / span) * width;
