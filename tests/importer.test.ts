@@ -119,6 +119,21 @@ describe("importer analysis", () => {
   });
 });
 
+describe("riser and impact", () => {
+  test("sit where they were cut from: just before, and on, the biggest jump", () => {
+    const drums = beat(124, 40, 0.2);
+    const bar = 240 / 124;
+    // "other": quiet, then loud from bar 16
+    const other = new Float32Array(drums.length).map((_, i) => (i / SR - 0.2 >= 16 * bar ? 0.4 : 0.05) * Math.sin((2 * Math.PI * 220 * i) / SR));
+    const mix = new Float32Array(drums.length).map((_, i) => drums[i] + other[i]);
+    const { analysis } = analyse({ mix, stems: { drums, other } });
+    const riser = analysis.voices.find((voice) => voice.id === "riser");
+    const impact = analysis.voices.find((voice) => voice.id === "impact");
+    expect(impact?.bar).toBe(16);
+    expect(riser?.bar).toBe(14);
+  });
+});
+
 describe("ogg opus muxer", () => {
   test("pages carry the header, a valid crc and the trimmed length", async () => {
     const { muxOggOpus, oggCrc } = await import("@/engine/modules/importer/ogg.module");

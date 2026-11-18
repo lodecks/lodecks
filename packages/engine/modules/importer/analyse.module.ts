@@ -505,7 +505,8 @@ export const analyse = (input: AnalyseInput, log: (message: string) => void = ()
     }
   }
 
-  // a riser and an impact around the biggest energy jump
+  // a riser and an impact around the biggest energy jump, kept at their
+  // place in the song (the pack editor and the jukebox read it)
   const other = backing.other;
   if (other && found.length > 1) {
     const energy = barRms(other, offset, bar, bars);
@@ -513,10 +514,10 @@ export const analyse = (input: AnalyseInput, log: (message: string) => void = ()
     const drop = jumps.reduce((best, item) => (item[1] > best[1] ? item : best))[0];
     if (drop >= 2) {
       files["voices/riser.wav"] = fade(cut(other, offset, bar, drop - 2, 2));
-      analysis.voices.push({ id: "riser", name: "Riser", file: "voices/riser.wav", type: "oneshot", bars: 2, score: 0 });
+      analysis.voices.push({ id: "riser", name: "Riser", file: "voices/riser.wav", type: "oneshot", bars: 2, bar: drop - 2, score: 0 });
     }
     files["voices/impact.wav"] = fade(cut(other, offset, bar, drop, 1));
-    analysis.voices.push({ id: "impact", name: "Impact", file: "voices/impact.wav", type: "oneshot", bars: 1, score: 0 });
+    analysis.voices.push({ id: "impact", name: "Impact", file: "voices/impact.wav", type: "oneshot", bars: 1, bar: drop, score: 0 });
   }
 
   log(`${analysis.voices.length} voices, ${analysis.stems.length} stems`);
