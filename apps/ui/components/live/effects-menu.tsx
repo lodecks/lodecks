@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Effect } from "@/engine/modules/visual/library.module";
 
 import { useGifImport } from "@/components/visual/effects";
+import { GifThumb } from "@/components/visual/gif-thumb";
 import { useEngine, useVisuals } from "@/hooks/engine.hook";
 import { cn } from "~/utils/classes.util";
 
@@ -143,13 +144,13 @@ export const EffectsMenu = ({ className }: { className?: string }) => {
             onClick={() => file.current?.click()}
           >
             <ImagePlus size={13} strokeWidth={1.75} className="text-warn" />
-            import a gif…
-            <span className="text-dim ml-auto text-[11px]">gif, webp, png</span>
+            import a gif or video…
+            <span className="text-dim ml-auto text-[11px]">gif, webp, png, mp4</span>
           </button>
           <input
             ref={file}
             type="file"
-            accept="image/gif,image/webp,image/png"
+            accept="image/gif,image/webp,image/png,video/mp4,video/webm"
             className="hidden"
             onChange={(event) => {
               const picked = event.target.files?.[0];
@@ -167,7 +168,7 @@ export const EffectsMenu = ({ className }: { className?: string }) => {
             <input
               value={url}
               onChange={(event) => setUrl(event.target.value)}
-              placeholder="or a gif url…"
+              placeholder="or a gif or mp4 url…"
               className="bg-ink border-line min-w-0 flex-1 border px-2 py-0.5 text-[11px] outline-none"
             />
             <button type="submit" className={cn(small, "text-text opacity-80")} disabled={!url.trim() || gifs.busy}>
@@ -196,7 +197,7 @@ export const EffectsMenu = ({ className }: { className?: string }) => {
                   const code = `gif(${JSON.stringify(gif.name)})`;
                   return (
                     <div key={gif.id} className="flex items-center gap-2 px-3 py-1 hover:bg-white/[0.04]" title={gif.source}>
-                      <img src={gif.url} alt="" className="border-line h-5 w-8 shrink-0 border object-cover" />
+                      <GifThumb gif={gif} className="border-line h-5 w-8 shrink-0 border object-cover" />
                       <span className="text-bright min-w-0 flex-1 truncate">{gif.name}</span>
                       <span className="flex shrink-0 items-center gap-1">
                         <button

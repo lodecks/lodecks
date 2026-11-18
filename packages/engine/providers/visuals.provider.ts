@@ -1,6 +1,6 @@
 import { BeatsPerBar } from "@/common/constants/quantize.constant";
 
-import { DecodedGif, GifPlayer, decodeGif, loopBeats } from "../modules/visual/gif.module";
+import { DecodedGif, GifExtension, GifPlayer, decodeGif, isVideoType, loopBeats, releaseGif } from "../modules/visual/gif.module";
 import { Effect, EffectKind, GifRecord, Library } from "../modules/visual/library.module";
 import { DefaultPreset, VisualPresets } from "../modules/visual/presets.module";
 import {
@@ -23,6 +23,8 @@ export type GifInfo = {
   createdAt: number;
   // object url, for thumbnails
   url: string;
+  // a video (mp4, webm), shown with <video> instead of <img>
+  video: boolean;
 };
 
 export type VisualsState = {
@@ -137,7 +139,8 @@ class VisualsProvider {
         name: gif.name,
         source: gif.source,
         createdAt: gif.createdAt,
-        url: URL.createObjectURL(gif.blob)
+        url: URL.createObjectURL(gif.blob),
+        video: isVideoType(gif.blob.type)
       }))
     });
   }
@@ -254,13 +257,13 @@ class VisualsProvider {
     this.store.set({ beats: this.gif.beats });
   }
 
-  /** Imports a gif (or other animated image) and makes a gif effect of it */
+  /** Imports a gif (or other animated image, or a video) and makes a gif effect of it */
   async importGif(blob: Blob, name: string, source?: string) {
     // decode first, so broken files are refused before they are stored
     const decoded = await decodeGif(blob);
     const record: GifRecord = {
       id: `gif-${crypto.randomUUID().slice(0, 8)}`,
-      name: name.replace(/\.(gif|webp|png|apng)$/i, "").slice(0, 60) || "gif",
+      name: name.replace(GifExtension, "").slice(0, 60) || "gif",
       blob,
       source,
       createdAt: Date.now()
@@ -285,7 +288,7 @@ class VisualsProvider {
   async removeGif(id: string) {
     await Library.deleteGif(id);
     const decoded = await this.decoded.get(id)?.catch(() => undefined);
-    decoded?.frames.forEach((frame) => frame.close());
+    if (decoded) releaseGif(decoded);
     this.decoded.delete(id);
     await this.refresh();
     if (this.gif.id === id) {

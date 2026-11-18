@@ -110,7 +110,7 @@ export const Globals: ApiDoc[] = [
   { name: "viz", signature: 'viz("effect")', doc: "a visual effect, built in or your own (the effects menu)", returns: "visual", args: ["effect"] },
   { name: "glsl", signature: "glsl`…`", doc: "a Shadertoy-style shader: mainImage(), iTime, uKick, uFft, uBeat, iChannel0 (gif)…", returns: "visual" },
   { name: "hydra", signature: "hydra`…`", doc: 'hydra code: osc(10).kaleid(4).out() — fft(), kick(), gif(fit?) inside ("cover", "contain", "fill")', returns: "visual" },
-  { name: "gif", signature: 'gif("name"?, fit?)', doc: 'a gif imported from the effects menu, on the beat; fit "cover" (default: fills, crops), "contain" (all of it) or "fill" (stretched)', returns: "visual", args: ["gif", "fit"] },
+  { name: "gif", signature: 'gif("name"?, fit?)', doc: 'a gif (on the beat) or video (mp4, webm: muted, looping) imported from the effects menu; fit "cover" (default: fills, crops), "contain" (all of it) or "fill" (stretched)', returns: "visual", args: ["gif", "fit"] },
   { name: "camera", signature: 'camera("effect"?)', doc: 'the webcam as a visual: "raw", "matrix", "silhouette", "edges", "thermal", "halftone", "pixel", "glitch" (the browser asks first)', returns: "visual", args: ["camera"] },
   { name: "layers", signature: "layers(...visuals)", doc: "stacks visuals: the first at the bottom, each next one blended over it (.blend() / .opacity()); .over() adds to what plays instead", returns: "visual" },
   // views

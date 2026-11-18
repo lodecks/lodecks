@@ -50,6 +50,19 @@ The gif loops in time with the music. `fit` is `"cover"` (the default: fills
 the screen, cropping), `"contain"` (all of it, with bars) or `"fill"`
 (stretched).
 
+### Videos
+
+mp4 and webm files import the same way and play through `gif()` too, as a
+background, a layer or inline:
+
+```js
+gif("city-at-night").show()
+```
+
+A video has no controls: it plays muted, on a loop, forever, at its own
+speed (it does not follow the tempo like a gif). Short loops work best;
+imports from a url are capped at 25 MB.
+
 In the effects menu, ▶ on a gif drops it **over** whatever is playing,
 blended in, instead of replacing it — see [stacking on the fly](#stacking-on-the-fly).
 

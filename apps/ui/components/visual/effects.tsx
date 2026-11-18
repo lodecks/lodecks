@@ -2,14 +2,16 @@ import { Copy, Download, FileCode, Film, Pencil, Plus, Sparkles, Trash2, Upload 
 import { useRef, useState } from "react";
 
 import type { Effect } from "@/engine/modules/visual/library.module";
+import type { GifInfo } from "@/engine/providers/visuals.provider";
 
 import { Button } from "@/components/button";
 import { ErrorIcon } from "@/components/icon";
+import { GifThumb } from "@/components/visual/gif-thumb";
 import { useEngine, useVisuals } from "@/hooks/engine.hook";
 import { api } from "@/utils/client.util";
 import { cn } from "~/utils/classes.util";
 
-const ImageType = /^image\/(gif|webp|png|apng)$/;
+const ImageType = /^(image\/(gif|webp|png|apng)|video\/(mp4|webm))$/;
 
 /** Gif import from a url (through the api) or a file, shared with drop */
 export const useGifImport = () => {
@@ -40,7 +42,7 @@ export const useGifImport = () => {
       }),
     fromFile: (file: File) =>
       run(async () => {
-        if (!ImageType.test(file.type)) throw new Error(`${file.name} is not a gif`);
+        if (!ImageType.test(file.type)) throw new Error(`${file.name} is not a gif or a video (mp4, webm)`);
         await engine!.visuals.importGif(file, file.name);
       })
   };
@@ -52,7 +54,7 @@ const KindBadges = {
   gif: { label: "gif", className: "text-warn" }
 };
 
-const EffectRow = ({ effect, active, thumb }: { effect: Effect; active: boolean; thumb?: string }) => {
+const EffectRow = ({ effect, active, thumb }: { effect: Effect; active: boolean; thumb?: GifInfo }) => {
   const engine = useEngine();
   const [renaming, setRenaming] = useState(false);
   const badge = KindBadges[effect.kind];
@@ -68,7 +70,7 @@ const EffectRow = ({ effect, active, thumb }: { effect: Effect; active: boolean;
     >
       <span className="flex h-6 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[2px] bg-black">
         {thumb ? (
-          <img src={thumb} alt="" className="h-full w-full object-cover [image-rendering:pixelated]" />
+          <GifThumb gif={thumb} className="h-full w-full object-cover [image-rendering:pixelated]" />
         ) : effect.kind === "hydra" ? (
           <Sparkles size={11} strokeWidth={1.75} className="text-deck-b" />
         ) : (
@@ -131,8 +133,8 @@ export const VisualsEffects = () => {
   const file = useRef<HTMLInputElement>(null);
   const mine = visuals.effects.filter((effect) => !effect.builtIn);
   const builtIn = visuals.effects.filter((effect) => effect.builtIn);
-  const thumbs = Object.fromEntries(visuals.gifs.map((gif) => [gif.id, gif.url]));
-  const latest = visuals.gifs[0]?.url;
+  const thumbs = Object.fromEntries(visuals.gifs.map((gif) => [gif.id, gif]));
+  const latest = visuals.gifs[0];
   const thumb = (effect: Effect) =>
     effect.gifId ? thumbs[effect.gifId] : effect.kind === "gif" ? latest : undefined;
 
@@ -152,21 +154,21 @@ export const VisualsEffects = () => {
             event.stopPropagation();
             if (event.key === "Enter") importUrl();
           }}
-          placeholder="https://… .gif — import a gif from a url"
+          placeholder="https://… .gif or .mp4 — import a gif or video from a url"
           className="bg-ink border-line text-text min-w-0 flex-1 border px-2 py-0.5 text-[12px] outline-none select-text"
         />
         <Button size="sm" data-deck="b" design="accent" onClick={importUrl} disabled={!url.trim() || gifs.busy}>
           <Download size={11} strokeWidth={1.75} />
           {gifs.busy ? "importing" : "import"}
         </Button>
-        <Button size="sm" onClick={() => file.current?.click()} disabled={gifs.busy} title="import a gif file (or drop one on the visuals)">
+        <Button size="sm" onClick={() => file.current?.click()} disabled={gifs.busy} title="import a gif or video file (mp4, webm)">
           <Upload size={11} strokeWidth={1.75} />
           file
         </Button>
         <input
           ref={file}
           type="file"
-          accept="image/gif,image/webp,image/png"
+          accept="image/gif,image/webp,image/png,video/mp4,video/webm"
           className="hidden"
           onChange={(event) => {
             const picked = event.target.files?.[0];
@@ -222,7 +224,7 @@ export const VisualsEffects = () => {
                   onClick={() => engine?.visuals.useGif(gif.id)}
                   title={`${gif.name}${gif.source ? `\n${gif.source}` : ""}\nclick: use with this effect`}
                 >
-                  <img src={gif.url} alt={gif.name} className="h-full w-full object-cover" />
+                  <GifThumb gif={gif} className="h-full w-full object-cover" />
                   <button
                     className="text-bad absolute top-0.5 right-0.5 hidden rounded-[2px] bg-black/70 p-0.5 group-hover:block"
                     onMouseDown={(event) => event.preventDefault()}

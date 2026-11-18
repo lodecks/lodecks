@@ -3,6 +3,10 @@
  * browser's ImageDecoder), then played back locked to the transport: a
  * loop lasts a whole number of beats, so frame changes land on the beat
  * and follow the tempo.
+ *
+ * Videos (mp4, webm) go the same way, but are not decoded into frames: a
+ * muted video element loops on its own, at its own speed, and is drawn
+ * into the same canvas, so gif(), iChannel0 and the layers read it alike.
  */
 export type DecodedGif = {
   frames: ImageBitmap[];
@@ -12,7 +16,15 @@ export type DecodedGif = {
   height: number;
   // natural length of one loop, in ms
   duration: number;
+  // a video plays here instead of the frames
+  video?: HTMLVideoElement;
 };
+
+/** File types imported as gifs: animated images, and videos */
+export const GifTypes = ["image/gif", "image/webp", "image/png", "image/apng", "video/mp4", "video/webm"];
+export const isVideoType = (type: string) => type.startsWith("video/");
+// the extensions a name loses when it becomes the gif's name
+export const GifExtension = /\.(gif|webp|png|apng|mp4|m4v|webm)$/i;
 
 /**
  * How a gif sits on the screen, like css object-fit: cover fills it
@@ -76,7 +88,60 @@ export const frameDuration = (microseconds?: number | null) => {
   return ms < MinFrame ? DefaultFrame : ms;
 };
 
+// videos are drawn larger than gif frames: they are often backgrounds
+const MaxVideoSize = 1280;
+
+/**
+ * A video, ready to play: muted, looping, inline and without controls, so
+ * it only ever plays, endlessly. Its sound is never heard.
+ */
+export const decodeVideo = async (blob: Blob): Promise<DecodedGif> => {
+  const video = document.createElement("video");
+  video.muted = true;
+  video.loop = true;
+  video.playsInline = true;
+  video.autoplay = true;
+  video.controls = false;
+  video.preload = "auto";
+  const url = URL.createObjectURL(blob);
+  video.src = url;
+  try {
+    await new Promise<void>((resolve, reject) => {
+      video.onloadeddata = () => resolve();
+      video.onerror = () => reject(new Error(`this browser cannot play ${blob.type || "this video"}`));
+    });
+  } catch (error) {
+    URL.revokeObjectURL(url);
+    throw error;
+  }
+  video.onerror = null;
+  await video.play().catch(() => {});
+  const scale = Math.min(1, MaxVideoSize / Math.max(video.videoWidth, video.videoHeight));
+  const duration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration * 1000 : DefaultFrame;
+  return {
+    frames: [],
+    durations: [duration],
+    width: Math.max(1, Math.round(video.videoWidth * scale)),
+    height: Math.max(1, Math.round(video.videoHeight * scale)),
+    duration,
+    video
+  };
+};
+
+/** Lets go of what a decoded gif holds: its frames, or its video */
+export const releaseGif = (gif: DecodedGif) => {
+  gif.frames.forEach((frame) => frame.close());
+  if (gif.video) {
+    const url = gif.video.src;
+    gif.video.pause();
+    gif.video.removeAttribute("src");
+    gif.video.load();
+    URL.revokeObjectURL(url);
+  }
+};
+
 export const decodeGif = async (blob: Blob): Promise<DecodedGif> => {
+  if (isVideoType(blob.type)) return decodeVideo(blob);
   if (typeof ImageDecoder === "undefined") {
     throw new Error("this browser cannot decode gifs (no ImageDecoder)");
   }
@@ -151,6 +216,7 @@ export class GifPlayer {
     this.gif = gif;
     this.beats = beats;
     this.shown = -1;
+    this.shownTime = -1;
     canvas.width = gif?.width || 1;
     canvas.height = gif?.height || 1;
     this.ctx?.clearRect(0, 0, canvas.width, canvas.height);
@@ -161,12 +227,24 @@ export class GifPlayer {
   tick(beat: number | undefined, time: number) {
     const gif = this.gif;
     if (!gif || !this.ctx) return;
+    if (gif.video) return this.tickVideo(gif.video, gif);
     const progress = beat === undefined ? time / gif.duration : beat / this.beats;
     const index = frameAt(gif.durations, progress);
     if (index === this.shown) return;
     this.shown = index;
     this.ctx.clearRect(0, 0, gif.width, gif.height);
     this.ctx.drawImage(gif.frames[index], 0, 0);
+    this.version++;
+  }
+
+  // a video keeps playing by itself: draws it whenever it moved on
+  private shownTime = -1;
+  private tickVideo(video: HTMLVideoElement, gif: DecodedGif) {
+    // a browser may pause a hidden video; it only ever plays
+    if (video.paused) video.play().catch(() => {});
+    if (video.readyState < 2 || video.currentTime === this.shownTime) return;
+    this.shownTime = video.currentTime;
+    this.ctx!.drawImage(video, 0, 0, gif.width, gif.height);
     this.version++;
   }
 }

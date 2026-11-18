@@ -3,11 +3,11 @@ import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
 
 /**
- * Downloads an image for the browser, which most hosts would block
- * cross-origin. Only public http(s) addresses, only image types, and a
- * size cap, checked again on every redirect.
+ * Downloads an image (or a short video) for the browser, which most hosts
+ * would block cross-origin. Only public http(s) addresses, only image and
+ * video types, and a size cap, checked again on every redirect.
  */
-export const ImageTypes = ["image/gif", "image/webp", "image/png", "image/apng"];
+export const ImageTypes = ["image/gif", "image/webp", "image/png", "image/apng", "video/mp4", "video/webm"];
 
 export type FetchOptions = {
   maxBytes?: number;
@@ -123,7 +123,7 @@ export const fetchImage = async (raw: string, options: FetchOptions = {}) => {
     const type = (response.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
     if (!ImageTypes.includes(type)) {
       await response.body?.cancel();
-      throw new FetchError(`not a gif or animated image (${type || "no type"})`, 415);
+      throw new FetchError(`not a gif, animated image or video (${type || "no type"})`, 415);
     }
     const declared = Number(response.headers.get("content-length") || 0);
     if (declared > maxBytes) {
