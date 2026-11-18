@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { Globals, Methods, docFor, returnsOf } from "@/engine/modules/live/api.module";
-import { Layers } from "@/engine/modules/live/layers.module";
+import { Layers, boxRect, parseCorner } from "@/engine/modules/live/layers.module";
 import { Runtime, blockAt, splitBlocks, transform } from "@/engine/modules/live/runtime.module";
 import { Lead, Scheduler, nextBoundary } from "@/engine/modules/live/schedule.module";
 import { Binder, Signal, lfo, ramp, shape } from "@/engine/modules/live/signals.module";
@@ -160,5 +160,26 @@ describe("api table", () => {
     const layers = new Layers();
     layers.set([{ source: { kind: "glsl", code: "a" } }, { source: { kind: "glsl", code: "b" }, blend: "add", opacity: 0.5 }]);
     expect(layers.store.get().list.map((layer) => [layer.name, layer.blend])).toEqual([["l0", "normal"], ["l1", "add"]]);
+  });
+
+  test("a boxed layer sits in its corner, in the screen's shape", () => {
+    const near = (rect: number[], expected: number[]) => rect.forEach((value, index) => expect(value).toBeCloseTo(expected[index], 6));
+    expect(boxRect()).toEqual([0, 0, 1, 1]);
+    // y is up, as WebGL reads it: bottom is near 0
+    near(boxRect({ corner: "bottom-right", size: 0.3 }), [0.675, 0.025, 0.3, 0.3]);
+    near(boxRect({ corner: "top-left", size: 0.3 }), [0.025, 0.675, 0.3, 0.3]);
+    near(boxRect({ corner: "center", size: 0.5 }), [0.25, 0.25, 0.5, 0.5]);
+    // a signal is read every frame; out of range is clamped, full size has no inset
+    near(boxRect({ corner: "bottom-left", size: () => 2 }), [0, 0, 1, 1]);
+    expect(boxRect({ corner: "bottom-left", size: 0 })[2]).toBe(0.05);
+    expect(parseCorner("Bottom Right")).toBe("bottom-right");
+    expect(parseCorner("middle")).toBeUndefined();
+  });
+
+  test("the box goes with the layer", () => {
+    const layers = new Layers();
+    layers.set([{ source: { kind: "glsl", code: "a" } }, { source: { kind: "glsl", code: "cam", camera: true }, box: { corner: "bottom-right", size: 0.25 } }]);
+    expect(layers.store.get().list.map((layer) => layer.box)).toEqual([undefined, { corner: "bottom-right", size: 0.25 }]);
+    expect(docFor("corner")?.args).toEqual(["corner"]);
   });
 });

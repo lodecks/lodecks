@@ -13,16 +13,63 @@ export type LayerSource =
   | { kind: "glsl"; code: string; gif?: string; camera?: boolean }
   | { kind: "hydra"; code: string };
 
+/** Where a boxed layer sits, like a picture in picture */
+export const Corners = ["bottom-right", "bottom-left", "top-right", "top-left", "center"] as const;
+export type Corner = (typeof Corners)[number];
+
+// a layer drawn small, in the screen's shape: size is its width (and
+// height) as a share of the screen's, a number or read every frame
+export type Box = { corner: Corner; size: number | (() => number) };
+
+// room between a boxed layer and the edges, as a share of the screen
+const Inset = 0.025;
+const MinSize = 0.05;
+
 export type Layer = {
   name: string;
   source: LayerSource;
   blend: Blend;
   // a number, or read every frame
   opacity: number | (() => number);
+  // drawn in a box instead of over the whole screen
+  box?: Box;
   order: number;
 };
 
-export type LayerOptions = { blend?: string; opacity?: number | (() => number) };
+export type LayerOptions = { blend?: string; opacity?: number | (() => number); box?: Box };
+
+export const parseCorner = (value: unknown): Corner | undefined => {
+  const corner = String(value).toLowerCase().replace(/[\s_]+/g, "-");
+  return (Corners as readonly string[]).includes(corner) ? (corner as Corner) : undefined;
+};
+
+/**
+ * The box on screen, in 0…1 with y up (as WebGL reads it): x, y of its
+ * lower left corner, then width and height. The whole screen when unboxed.
+ */
+export const boxRect = (box?: Box): [number, number, number, number] => {
+  if (!box) return [0, 0, 1, 1];
+  let size: number;
+  try {
+    size = Number(typeof box.size === "function" ? box.size() : box.size);
+  } catch {
+    size = 1;
+  }
+  if (!Number.isFinite(size)) size = 1;
+  size = Math.max(MinSize, Math.min(1, size));
+  // a full-size box has no room for the inset
+  const inset = Math.min(Inset, (1 - size) / 2);
+  const far = 1 - inset - size;
+  const centre = (1 - size) / 2;
+  const [x, y] = {
+    "bottom-right": [far, inset],
+    "bottom-left": [inset, inset],
+    "top-right": [far, far],
+    "top-left": [inset, far],
+    center: [centre, centre]
+  }[box.corner];
+  return [x, y, size, size];
+};
 
 // the compositor blends at most this many
 export const MaxLayers = 6;
@@ -63,6 +110,7 @@ export class Layers {
       source,
       blend,
       opacity: options.opacity ?? 1,
+      box: options.box,
       order: 0
     };
     if (this.draft) {
@@ -80,7 +128,7 @@ export class Layers {
   }
 
   /** Replaces the whole stack */
-  set(layers: { source: LayerSource; blend?: string; opacity?: number | (() => number) }[]) {
+  set(layers: ({ source: LayerSource } & LayerOptions)[]) {
     this.begin();
     layers.forEach((layer, index) => this.declare(`l${index}`, layer.source, layer));
     this.commit();

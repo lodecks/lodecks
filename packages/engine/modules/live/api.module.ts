@@ -20,6 +20,7 @@ export type ArgValues =
   | "xfade"
   | "camera"
   | "fit"
+  | "corner"
   | "jukebox";
 
 export type ApiDoc = {
@@ -160,6 +161,7 @@ export const Methods: Record<Kind, ApiDoc[]> = {
   visual: [
     { name: "blend", signature: 'blend("normal" | "add" | "screen" | "multiply")', doc: "how it mixes with what is below", returns: "visual", args: ["blend"] },
     { name: "opacity", signature: "opacity(amount)", doc: "0…1, or a signal like kick()", returns: "visual" },
+    { name: "corner", signature: 'corner("bottom-right" | "bottom-left" | "top-right" | "top-left" | "center", size?)', doc: "draws it small, in the screen's shape, like a picture in picture: size 0…1 of the screen (0.3), or a signal; what is below shows around it", returns: "visual", args: ["corner"] },
     { name: "show", signature: "show()", doc: "shows it under this line, in place of the visuals playing", returns: "visual" },
     { name: "over", signature: "over()", doc: "puts it on top of the visuals playing, keeping them, and shows it under this line; hide() takes it off", returns: "visual" },
     { name: "full", signature: "full()", doc: "the visuals over the whole screen (Esc leaves)", returns: "visual" },

@@ -90,6 +90,7 @@ export const frameDuration = (microseconds?: number | null) => {
 
 // videos are drawn larger than gif frames: they are often backgrounds
 const MaxVideoSize = 1280;
+const VideoTimeout = 10_000;
 
 /**
  * A video, ready to play: muted, looping, inline and without controls, so
@@ -107,8 +108,16 @@ export const decodeVideo = async (blob: Blob): Promise<DecodedGif> => {
   video.src = url;
   try {
     await new Promise<void>((resolve, reject) => {
-      video.onloadeddata = () => resolve();
-      video.onerror = () => reject(new Error(`this browser cannot play ${blob.type || "this video"}`));
+      // a load that never comes fails, so running the line again retries
+      const timer = setTimeout(() => reject(new Error("the video did not load, run the line again")), VideoTimeout);
+      video.onloadeddata = () => {
+        clearTimeout(timer);
+        resolve();
+      };
+      video.onerror = () => {
+        clearTimeout(timer);
+        reject(new Error(`this browser cannot play ${blob.type || "this video"}`));
+      };
     });
   } catch (error) {
     URL.revokeObjectURL(url);

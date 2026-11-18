@@ -22,10 +22,13 @@ import { CameraEffects, cameraShader } from "../visual/camera-presets.module";
 import { DefaultFit, GifFits, parseFit } from "../visual/gif.module";
 import { gifShader } from "../visual/shader-presets.module";
 import { Controls, Globals, Kind, KindTag } from "./api.module";
-import { LayerSource, Layers } from "./layers.module";
+import { Corners, LayerOptions, LayerSource, Layers, parseCorner } from "./layers.module";
 import { RunResult, Runtime } from "./runtime.module";
 import { Scheduler } from "./schedule.module";
 import { Binder, Shape, Signal, isSignal, lfo, ramp } from "./signals.module";
+
+// a corner() box's width, as a share of the screen's
+const DefaultBoxSize = 0.3;
 
 export type LiveHost = {
   decks: Record<DeckId, Deck>;
@@ -53,7 +56,7 @@ export type ComponentSpec =
   | { type: "help"; name?: string };
 
 /** A visual's layer before it joins a stack */
-export type VisualSource = { source: LayerSource; blend?: string; opacity?: number | (() => number) };
+export type VisualSource = { source: LayerSource } & LayerOptions;
 
 // drawn under the doc line `line`
 export type Placed = { id: string; line: number; spec: ComponentSpec };
@@ -796,7 +799,7 @@ export class Live {
     this.previewed.set(to, code);
   }
 
-  private visualHandle(sources: { source: LayerSource; blend?: string; opacity?: number | (() => number) }[]) {
+  private visualHandle(sources: VisualSource[]) {
     const live = this;
     const shown: string[] = [];
     // layers over() put on top of the stack, to take off again with hide()
@@ -820,6 +823,15 @@ export class Live {
       opacity(amount: number | Signal) {
         const value = isSignal(amount) ? amount.read : Number(amount);
         for (const layer of sources) layer.opacity = value;
+        return handle;
+      },
+      // a picture in picture: drawn small, in a corner or the centre
+      corner(where: unknown = "bottom-right", size: number | Signal = DefaultBoxSize) {
+        const corner = parseCorner(where);
+        if (!corner) throw new LiveError(`corner(where, size): where is ${Corners.join(", ")}`);
+        const value = isSignal(size) ? size.read : Number(size);
+        if (typeof value === "number" && !Number.isFinite(value)) throw new LiveError("corner(where, size): size is 0…1, a share of the screen");
+        for (const layer of sources) layer.box = { corner, size: value };
         return handle;
       },
       show() {

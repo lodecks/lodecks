@@ -113,6 +113,28 @@ flash.hide()       // gone, the tunnel stays
 
 Up to 6 layers play at once, and only one of them can be Hydra.
 
+## Picture in picture
+
+`corner()` draws a visual small, in a corner (or the centre), with what is
+below showing around it. The box keeps the screen's shape, so nothing gets
+squashed:
+
+<Try code={`a.play()
+layers(
+  viz("tunnel"),
+  camera("raw").corner("bottom-right", 0.3)
+).show()`} />
+
+The first argument is `"bottom-right"` (the default), `"bottom-left"`,
+`"top-right"`, `"top-left"` or `"center"`; the second is its size, a share of
+the screen from 0 to 1 (`0.3`), or a signal: `corner("center", kick().range(0.3, 0.5))`
+pumps on the kick. It works on any visual, a gif, a video or a shader too, and
+`blend()` and `opacity()` apply inside the box:
+
+```js
+camera("edges").corner("top-left", 0.25).opacity(0.8).over()
+```
+
 `"screen"` and `"add"` are the friendly blends for going over something: dark
 parts let what's below shine through. With `"normal"`, a full-screen visual
 covers everything under it.

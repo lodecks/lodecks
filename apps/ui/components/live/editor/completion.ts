@@ -6,6 +6,7 @@ import type { SyntaxNode } from "@lezer/common";
 
 import type { DeckId } from "@/common/constants/deck.constant";
 import { DeckFxs } from "@/common/constants/fx.constant";
+import { Corners } from "@/engine/modules/live/layers.module";
 import { GifFit, GifFits } from "@/engine/modules/visual/gif.module";
 import { CameraEffects, cameraDoc } from "@/engine/modules/visual/camera-presets.module";
 import {
@@ -211,6 +212,8 @@ const valuesFor = (values: ArgValues, host: CompletionHost, deck?: DeckId): Comp
       ];
     case "fit":
       return GifFits.map((label) => ({ label, type: "constant", info: FitDocs[label] }));
+    case "corner":
+      return Corners.map((label) => ({ label, type: "constant" }));
   }
 };
 

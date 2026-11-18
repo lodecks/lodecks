@@ -1,6 +1,6 @@
 import { BeatsPerBar } from "@/common/constants/quantize.constant";
 
-import { Blend, Blends, Layer, LayerSource, Layers } from "../modules/live/layers.module";
+import { Blend, Blends, Layer, LayerOptions, LayerSource, Layers, boxRect } from "../modules/live/layers.module";
 import { GifPlayer, loopBeats } from "../modules/visual/gif.module";
 import { Emitter } from "../utils/store.util";
 import {
@@ -31,11 +31,19 @@ uniform sampler2D uLayer;
 uniform int uMode;
 uniform float uOpacity;
 uniform vec2 uSize;
+// where the layer is drawn: x, y, width, height (the whole screen unboxed)
+uniform vec4 uRect;
 out vec4 fragColor;
 void main() {
   vec2 uv = gl_FragCoord.xy / uSize;
   vec3 base = texture(uBase, uv).rgb;
-  vec3 layer = texture(uLayer, uv).rgb;
+  vec2 inside = (uv - uRect.xy) / uRect.zw;
+  // outside its box, the layer leaves what is below alone
+  if (any(lessThan(inside, vec2(0.0))) || any(greaterThan(inside, vec2(1.0)))) {
+    fragColor = vec4(base, 1.0);
+    return;
+  }
+  vec3 layer = texture(uLayer, inside).rgb;
   vec3 mixed = layer;
   if (uMode == 1) mixed = base + layer;
   else if (uMode == 2) mixed = 1.0 - (1.0 - base) * (1.0 - layer);
@@ -64,14 +72,17 @@ type Pass = {
 const Fps = 40;
 
 /** A stack a preview shows: the layers one line made */
-export type PreviewLayer = { source: LayerSource; blend?: string; opacity?: number | (() => number) };
+export type PreviewLayer = { source: LayerSource } & LayerOptions;
 
 // what makes two stacks look the same (opacity aside)
+// a box moving with a signal is the same box, wherever it is now
+const boxKey = ({ box }: Layer) => (box ? `${box.corner}@${typeof box.size === "number" ? box.size : "~"}` : "");
+
 const stackKey = (list: Layer[]) =>
   list
     .map((layer) => {
       const source = layer.source;
-      return `${source.kind}:${source.code}:${source.kind === "glsl" ? `${source.gif ?? ""}:${source.camera ? 1 : 0}` : ""}:${layer.blend}`;
+      return `${source.kind}:${source.code}:${source.kind === "glsl" ? `${source.gif ?? ""}:${source.camera ? 1 : 0}` : ""}:${layer.blend}:${boxKey(layer)}`;
     })
     .join("|");
 
@@ -87,7 +98,7 @@ class CompositorProvider {
 
   private gl?: WebGL2RenderingContext;
   private vertex?: WebGLShader;
-  private blend?: { program: WebGLProgram; base: any; layer: any; mode: any; opacity: any; size: any };
+  private blend?: { program: WebGLProgram; base: any; layer: any; mode: any; opacity: any; size: any; rect: any };
   private accum: Target[] = [];
   private passes = new Map<string, Pass>();
   private hydraTexture?: WebGLTexture;
@@ -117,6 +128,7 @@ class CompositorProvider {
       layer: gl.getUniformLocation(program, "uLayer"),
       mode: gl.getUniformLocation(program, "uMode"),
       opacity: gl.getUniformLocation(program, "uOpacity"),
+      rect: gl.getUniformLocation(program, "uRect"),
       size: gl.getUniformLocation(program, "uSize")
     };
     this.hydraTexture = createTexture(gl, 1, 1);
@@ -189,6 +201,7 @@ class CompositorProvider {
           source: layer.source,
           blend: (Blends as readonly string[]).includes(layer.blend ?? "") ? (layer.blend as Blend) : "normal",
           opacity: layer.opacity ?? 1,
+          box: layer.box,
           order
         }))
       );
@@ -398,6 +411,7 @@ class CompositorProvider {
       gl.bindTexture(gl.TEXTURE_2D, texture);
       gl.uniform1i(blend.mode, Modes[layer.blend]);
       gl.uniform1f(blend.opacity, Layers.opacity(layer));
+      gl.uniform4f(blend.rect, ...boxRect(layer.box));
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       read = write;
     }
