@@ -19,11 +19,15 @@ export type Settings = {
   deckColors: Record<DeckId, string>;
   // new sets start with example code; off, they start empty
   starterCode: boolean;
+  // the editor's docs while typing: descriptions and signatures in the
+  // suggestions, docs on hover, the argument hint's text. Off, it stays
+  // quiet: names only, for playing a set
+  editorDocs: boolean;
 };
 
 export const SettingsKey = "lodecks.settings";
 
-export const DefaultSettings: Settings = { palette: DefaultPalette, deckColors: DefaultDeckColors, starterCode: true };
+export const DefaultSettings: Settings = { palette: DefaultPalette, deckColors: DefaultDeckColors, starterCode: true, editorDocs: true };
 
 /** Whatever was saved, with anything unknown or broken back to its default */
 export const readSettings = (raw: unknown): Settings => {
@@ -35,7 +39,8 @@ export const readSettings = (raw: unknown): Settings => {
       a: isHexColor(colors.a) ? colors.a : DefaultDeckColors.a,
       b: isHexColor(colors.b) ? colors.b : DefaultDeckColors.b
     },
-    starterCode: typeof saved.starterCode === "boolean" ? saved.starterCode : true
+    starterCode: typeof saved.starterCode === "boolean" ? saved.starterCode : true,
+    editorDocs: typeof saved.editorDocs === "boolean" ? saved.editorDocs : true
   };
 };
 

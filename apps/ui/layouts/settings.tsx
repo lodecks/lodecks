@@ -99,6 +99,24 @@ const DeckColor = ({ id, color, other }: { id: DeckId; color: string; other: str
   );
 };
 
+const Toggle = ({ on, onChange, label, hint }: { on: boolean; onChange: (on: boolean) => void; label: string; hint: string }) => (
+  <label className="flex cursor-pointer items-start gap-3">
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      onClick={() => onChange(!on)}
+      className={cn("relative mt-0.5 h-5 w-9 shrink-0 rounded-full transition-colors", on ? "bg-[var(--color-deck-a)]" : "bg-line-strong")}
+    >
+      <span className={cn("bg-bright absolute top-0.5 h-4 w-4 rounded-full transition-[left]", on ? "left-[18px]" : "left-0.5")} />
+    </button>
+    <span>
+      <span className="text-bright block text-[13px]">{label}</span>
+      <span className="text-muted block text-[12px]">{hint}</span>
+    </span>
+  </label>
+);
+
 /** The settings themselves: on the /settings page, and in a tab next to the set */
 export const SettingsPanel = () => {
   const settings = useStore(Settings.store, DefaultSettings);
@@ -123,23 +141,25 @@ export const SettingsPanel = () => {
       </Section>
 
       <Section title="New sets" hint="What a set you create starts with.">
-        <label className="flex cursor-pointer items-start gap-3">
-          <button
-            type="button"
-            role="switch"
-            aria-checked={settings.starterCode}
-            onClick={() => Settings.set({ starterCode: !settings.starterCode })}
-            className={cn("relative mt-0.5 h-5 w-9 shrink-0 rounded-full transition-colors", settings.starterCode ? "bg-[var(--color-deck-a)]" : "bg-line-strong")}
-          >
-            <span className={cn("bg-bright absolute top-0.5 h-4 w-4 rounded-full transition-[left]", settings.starterCode ? "left-[18px]" : "left-0.5")} />
-          </button>
-          <span>
-            <span className="text-bright block text-[13px]">Start with example code</span>
-            <span className="text-muted block text-[12px]">
-              {settings.starterCode ? "New sets come with a deck, its controls and a few comments to get going." : "New sets start empty."}
-            </span>
-          </span>
-        </label>
+        <Toggle
+          on={settings.starterCode}
+          onChange={(starterCode) => Settings.set({ starterCode })}
+          label="Start with example code"
+          hint={settings.starterCode ? "New sets come with a deck, its controls and a few comments to get going." : "New sets start empty."}
+        />
+      </Section>
+
+      <Section title="Editor" hint="How much the code editor tells you while you type.">
+        <Toggle
+          on={settings.editorDocs}
+          onChange={(editorDocs) => Settings.set({ editorDocs })}
+          label="Docs while typing"
+          hint={
+            settings.editorDocs
+              ? "Suggestions come with what each one does, hovering a name shows its docs, and the call you type shows its arguments and what it does. Handy while learning."
+              : "Quiet, for playing a set: suggestions are names only, no docs on hover, and the call you type shows just its arguments."
+          }
+        />
       </Section>
 
       <section className="border-line border-t pt-8">

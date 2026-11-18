@@ -7,6 +7,7 @@ import type { SyntaxNode } from "@lezer/common";
 import type { DeckId } from "@/common/constants/deck.constant";
 import { DeckFxs } from "@/common/constants/fx.constant";
 import { Corners } from "@/engine/modules/live/layers.module";
+import { Settings } from "@/engine/providers/settings.provider";
 import { GifFit, GifFits } from "@/engine/modules/visual/gif.module";
 import { CameraEffects, cameraDoc } from "@/engine/modules/visual/camera-presets.module";
 import {
@@ -217,7 +218,26 @@ const valuesFor = (values: ArgValues, host: CompletionHost, deck?: DeckId): Comp
   }
 };
 
+/** Docs while typing, from the settings: off, the editor stays quiet */
+const showDocs = () => Settings.store.get().editorDocs;
+
+/**
+ * Quiet suggestions are names only: no docs, no signatures, no
+ * descriptions. What a value is stays (a pack's bpm and key, a track's deck),
+ * that is for playing, not for learning.
+ */
+const quiet = (option: Completion): Completion => {
+  const { info: _info, detail, ...rest } = option;
+  return option.type === "constant" && !option.section && detail ? { ...rest, detail } : rest;
+};
+
 export const liveCompletion = (host: CompletionHost) => (context: CompletionContext): CompletionResult | null => {
+  const result = suggest(host, context);
+  if (!result || showDocs()) return result;
+  return { ...result, options: result.options.map(quiet) };
+};
+
+const suggest = (host: CompletionHost, context: CompletionContext): CompletionResult | null => {
   const { state, pos } = context;
   const node = syntaxTree(state).resolveInner(pos, -1);
 
@@ -271,6 +291,7 @@ export const liveCompletion = (host: CompletionHost) => (context: CompletionCont
 /** Docs on hover, for any name of the language */
 export const liveHover = (host: CompletionHost) =>
   hoverTooltip((view, pos) => {
+    if (!showDocs()) return null;
     const { state } = view;
     const node = syntaxTree(state).resolveInner(pos, 1);
     if (node.name !== "VariableName" && node.name !== "PropertyName") return null;
@@ -377,10 +398,13 @@ const hintAt = (state: EditorState, host: CompletionHost): readonly Tooltip[] =>
             dom.append(span);
           });
           dom.append(")");
-          const text = document.createElement("div");
-          text.className = "cm-live-hint-doc";
-          text.textContent = found.doc;
-          dom.append(text);
+          // quiet: the call's arguments only, without the doc under them
+          if (showDocs()) {
+            const text = document.createElement("div");
+            text.className = "cm-live-hint-doc";
+            text.textContent = found.doc;
+            dom.append(text);
+          }
           return { dom };
         }
       }

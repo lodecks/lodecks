@@ -7,14 +7,15 @@ describe("settings", () => {
   test("nothing saved, or something broken, reads as the defaults", () => {
     expect(readSettings(null)).toEqual(DefaultSettings);
     expect(readSettings("nonsense")).toEqual(DefaultSettings);
-    expect(readSettings({ palette: "neon", deckColors: { a: "red", b: 3 }, starterCode: "yes" })).toEqual(DefaultSettings);
+    expect(readSettings({ palette: "neon", deckColors: { a: "red", b: 3 }, starterCode: "yes", editorDocs: 1 })).toEqual(DefaultSettings);
   });
 
   test("keeps what is valid, and fixes only what is not", () => {
-    expect(readSettings({ palette: "ember", deckColors: { a: "#34c8ff", b: "pink" }, starterCode: false })).toEqual({
+    expect(readSettings({ palette: "ember", deckColors: { a: "#34c8ff", b: "pink" }, starterCode: false, editorDocs: false })).toEqual({
       palette: "ember",
       deckColors: { a: "#34c8ff", b: DefaultSettings.deckColors.b },
-      starterCode: false
+      starterCode: false,
+      editorDocs: false
     });
   });
 
